@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vote-svc
+  labels:
+    role: vote
+spec:
+  selector:
+    role: vote
+    version: v1
+  ports:
+    - name: web
+      port: 80
+      targetPort: 80
+      nodePort: 30000 
+  type: NodePort
+  externalIPs:
+      - 192.168.137.175
+      - 192.168.137.94
+      - 192.168.137.134

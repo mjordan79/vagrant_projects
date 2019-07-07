@@ -1,0 +1,34 @@
+---
+# tasks file for systems
+  - name: create admin user
+    user: >
+      name=admin
+      state=present
+      create_home=yes
+      home=/home/admin
+      password=$1$5$aXhe88EeYw2juv.DU3rO6/
+      uid=5001
+
+  - name: remove dojo user
+    user: >
+      name=dojo
+      remove=yes
+      state=absent
+
+  - name: install tree utility
+    yum: >
+      name=tree
+      enable_plugin=deltarpm
+      state=present
+
+  - name: install ntp utility
+    yum: >
+      name=ntp
+      enable_plugin=deltarpm
+      state=installed
+
+  - name: start ntp service
+    service: >
+      name=ntpd
+      state=started
+...

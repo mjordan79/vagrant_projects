@@ -1,0 +1,107 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Creates an environment with a variable number of nodes, each visible in the private subnetwork.
+# Node 1 is supposed to be the master, the others are the workers.
+# All the nodes are Centos 7 based on Hyper-V hypervisor.
+# Requires the vagrant-hostmanager plugin:
+# 	Install with: vagrant plugin install vagrant-hostmanager beforehand.
+
+# Maintainer: Renato Perini <renato.perini@gmail.com>
+
+Vagrant.require_version ">= 2.2.0"
+
+# Define a script for enabling net filtering and installing Kubernetes.
+$script = <<-SCRIPT
+#!/bin/bash
+yum install -y deltarpm && yum update -y && yum install -y yum-utils curl telnet screen vim net-tools
+cp /tmp/fstab /etc/fstab
+#cp /tmp/kubernetes.repo /etc/yum.repos.d
+swapoff -a
+#yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+# Uncomment
+sed -i '/PasswordAuthentication yes/s/^#//g' /etc/ssh/sshd_config
+# Comment
+sed -i '/PasswordAuthentication no/s/^/#/g' /etc/ssh/sshd_config
+systemctl restart sshd
+SCRIPT
+
+$script_ansible = <<-SCRIPT
+#!/bin/bash
+yum install -y deltarpm && yum update -y && yum install -y yum-utils curl telnet screen vim git
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+echo "export PATH=$PATH:/usr/local/bin" >> /etc/profile.d/path.sh
+sh /etc/profile.d/path.sh
+yum install -y python36 python36-pip
+pip3 install --upgrade pip
+# Uncomment
+sed -i '/PasswordAuthentication yes/s/^#//g' /etc/ssh/sshd_config
+# Comment
+sed -i '/PasswordAuthentication no/s/^/#/g' /etc/ssh/sshd_config
+systemctl restart sshd
+SCRIPT
+
+Vagrant.configure(2) do |config| 
+	
+	# Config parameters for the environments
+	number_of_nodes = 2
+	cpus_per_node = 8
+	mem_ansible_controller=512
+	mem_per_node = 8704
+	docker_deploy = true
+	
+	# Enable /etc/hosts handling automatically.
+	if Vagrant.has_plugin?("vagrant-hostmanager")
+		config.hostmanager.enabled = true
+		config.hostmanager.manage_host = false
+		config.hostmanager.manage_guest = true
+		config.hostmanager.ignore_private_ip = false
+		config.hostmanager.include_offline = true
+	end
+
+	# Define an end trigger.
+	config.trigger.after :up do |trigger| 
+		trigger.info = "Multi node environment is up using #{number_of_nodes} nodes, 
+		#{cpus_per_node} CPUs per node with #{mem_per_node} KB of memory each."
+	end
+    
+	# Provision the nodes.
+	(1..number_of_nodes).each do |i|
+		# First node is the master
+		if i == 1 then
+			config.vm.define "ansible_controller", primary: true do |master|
+				master.vm.box = "centos/7"
+				master.vm.hostname = 'controller'
+				master.vm.provision "shell", inline: $script_ansible
+				master.vm.provision "shell", path: "provision_docker.sh" if docker_deploy == true
+                master.vm.network "private_network", bridge: "MySwitch"
+				master.vm.provider "hyperv" do |hv|
+					hv.enable_virtualization_extensions = true
+    				hv.linked_clone = true
+					hv.vmname = "Ansible_Controller"	
+					hv.cpus = cpus_per_node
+					hv.memory = mem_ansible_controller
+				end
+			end
+		else
+			# All the remaining nodes are workers.
+			config.vm.define "k8s_#{i - 1}" do |worker|
+				worker.vm.box = "centos/7"
+				worker.vm.hostname = "k8s#{i - 1}"
+				worker.vm.network "private_network", bridge: "MySwitch"
+				#worker.vm.provision "file", source: "./kubernetes.repo", destination: "/tmp/kubernetes.repo"
+				worker.vm.provision "file", source: "./fstab", destination: "/tmp/fstab"
+                worker.vm.provision "shell", inline: $script
+				worker.vm.provision "shell", path: "provision.sh"
+				worker.vm.provision "shell", path: "provision_docker.sh" if docker_deploy == true
+				worker.vm.provider "hyperv" do |hv|
+					hv.enable_virtualization_extensions = true
+    				hv.linked_clone = true
+					hv.vmname = "k8s_#{i - 1}"
+					hv.cpus = cpus_per_node
+					hv.memory = mem_per_node
+				end
+			end
+		end
+	end
+end

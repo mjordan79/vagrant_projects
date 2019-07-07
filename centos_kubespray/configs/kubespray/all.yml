@@ -1,0 +1,2 @@
+kubelet_load_modules: true
+kube_read_only_port: 10255

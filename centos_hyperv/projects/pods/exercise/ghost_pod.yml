@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ghost
+spec:
+  containers:
+    - name: ghost
+      image: ghost:2.4.0-alpine
+      ports:
+        - containerPort: 2368
+          hostPort: 2368

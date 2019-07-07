@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu
+spec:
+  containers:
+    - name: trusty
+      image: ubuntu:trusty
+      env:
+        - name: YOUR_NAME
+          value: "Renato"
+      command: ["/bin/echo"]
+      args: ["$(YOUR_NAME)"]
+
+
+

@@ -1,0 +1,39 @@
+# Playbook to deploy a web project using Ansible
+---
+  - name: Play to deploy a web application
+    hosts: lb
+    become: true
+    gather_facts: false
+    tasks:
+      - name: Add nginx repository
+        yum_repository: >
+          gpgcheck=no
+          baseurl=http://nginx.org/packages/centos/7/x86_64
+          enabled=yes
+          http_caching=packages
+          state=present
+      
+      - name: install nginx on system
+        yum: >
+          name=nginx
+          enable_plugin=deltarpm
+          state=present
+
+      - name: enables nginx service
+        service: >
+          name=nginx
+          enabled=yes
+          state=started
+
+      - name: install git
+        yum: >
+          name=git
+          enable_plugin=deltarpm
+          state=present
+
+      - name: clone project
+        git: >
+          clone=yes
+          repo=https://github.com/schoolofdevops/html-sample-app.git
+          dest=/usr/share/nginx/html/app
+...

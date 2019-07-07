@@ -1,0 +1,98 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Creates an environment with a variable number of nodes, each visible in the private subnetwork.
+# Node 1 is supposed to be the master, the others are the workers.
+# All the nodes are Centos 7 based on Hyper-V hypervisor.
+# Requires the vagrant-hostmanager plugin:
+# 	Install with: vagrant plugin install vagrant-hostmanager beforehand.
+
+# Maintainer: Renato Perini <renato.perini@gmail.com>
+
+Vagrant.require_version ">= 2.2.0"
+
+# Define a script for enabling net filtering and installing Kubernetes.
+$script = <<-SCRIPT
+#!/bin/bash
+
+cp /tmp/kubernetes.repo /etc/yum.repos.d
+cp /tmp/fstab /etc/fstab
+swapoff -a
+yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+#sed -i 's/cgroup-driver=systemd/cgroup-driver=cgroupfs/g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+systemctl daemon-reload && systemctl enable kubelet
+#kubeadm init --pod-network-cidr=10.244.0.0/16 (per Flannel, do not use for Weave)
+#mkdir /home/vagrant/.kube
+#cp /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+#chown vagrant:vagrant /home/vagrant/.kube/config
+#kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+SCRIPT
+
+Vagrant.configure(2) do |config| 
+	
+	# Config parameters for the environments
+	number_of_nodes = 3
+	cpus_per_node = 2
+	mem_per_node = 2048
+	#smb_vagrant_user = ""
+	#smb_vagrant_pass = ""
+	
+	# Enable /etc/hosts handling automatically.
+	if Vagrant.has_plugin?("vagrant-hostmanager")
+		config.hostmanager.enabled = true
+		config.hostmanager.manage_host = false
+		config.hostmanager.manage_guest = true
+		config.hostmanager.ignore_private_ip = false
+		config.hostmanager.include_offline = true
+	end
+
+	# Define an end trigger.
+	config.trigger.after :up do |trigger| 
+		trigger.info = "Multi node environment is up using #{number_of_nodes} nodes, 
+		#{cpus_per_node} CPUs per node with #{mem_per_node} KB of memory each."
+	end
+
+	# Provision the nodes.
+	(1..number_of_nodes).each do |i|
+		# First node is the master
+		if i == 1 then
+			config.vm.define "linux_master", primary: true do |master|
+				master.vm.box = "centos/7"
+				master.vm.hostname = 'master'
+				master.vm.provision "shell", path: "provision.sh"
+				master.vm.provision "file", source: "./kubernetes.repo", destination: "/tmp/kubernetes.repo"
+				master.vm.provision "file", source: "./fstab", destination: "/tmp/fstab"
+				master.vm.provision "shell", inline: $script
+				master.vm.network "private_network", bridge: "MySwitch"
+				master.vm.provider "hyperv" do |hv|
+					hv.enable_virtualization_extensions = true
+    				hv.linked_clone = true
+					hv.vmname = "Linux_Master"	
+					hv.cpus = cpus_per_node
+					hv.memory = mem_per_node
+				end
+				#master.vm.synced_folder "../master", "/vagrant", create: true, type: "smb",
+				#	smb_password: "#{smb_vagrant_pass}", smb_username: "#{smb_vagrant_user}"
+			end
+		else
+			# All the remaining nodes are workers.
+			config.vm.define "linux_worker#{i - 1}" do |worker|
+				worker.vm.box = "centos/7"
+				worker.vm.hostname = "worker#{i - 1}"
+				worker.vm.network "private_network", bridge: "MySwitch"
+				worker.vm.provision "shell", path: "provision.sh"
+				worker.vm.provision "file", source: "./kubernetes.repo", destination: "/tmp/kubernetes.repo"
+				worker.vm.provision "file", source: "./fstab", destination: "/tmp/fstab"
+				worker.vm.provision "shell", inline: $script
+				worker.vm.provider "hyperv" do |hv|
+					hv.enable_virtualization_extensions = true
+    				hv.linked_clone = true
+					hv.vmname = "Linux_Worker#{i - 1}"
+					hv.cpus = cpus_per_node
+					hv.memory = mem_per_node
+				end
+				#worker.vm.synced_folder "../worker#{i - 1}", "/vagrant", create: true, type: "smb"
+			end
+		end
+	end
+end

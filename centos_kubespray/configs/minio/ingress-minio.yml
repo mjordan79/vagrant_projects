@@ -1,0 +1,14 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: minio
+  namespace: minio
+spec:
+  rules:
+  - host: minio.192.168.137.172.xip.io
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: minio
+          servicePort: service

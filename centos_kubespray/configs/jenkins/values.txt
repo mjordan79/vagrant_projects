@@ -1,0 +1,11 @@
+ImageTag: "lts-alpine"
+
+AdminUser: admin
+AdminPassword: admin
+
+JenkinsUrl: "http://jenkins.192.168.137.172.xip.io"
+
+ServiceType: ClusterIP
+
+HostName: jenkins.192.168.137.172.xip.io
+

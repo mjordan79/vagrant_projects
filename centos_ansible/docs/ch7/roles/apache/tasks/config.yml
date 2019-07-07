@@ -1,0 +1,9 @@
+---
+  - name: copy apache httpd config file
+    copy: >
+        src=httpd.conf
+        dest=/etc/httpd/conf/httpd.conf
+        owner=root
+        group=root
+        mode=0644
+    notify: restart apache service

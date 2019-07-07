@@ -1,0 +1,7 @@
+---
+  - name: playbook for app server
+    hosts: app
+    become: true
+    gather_facts: false
+    roles:
+      - apache

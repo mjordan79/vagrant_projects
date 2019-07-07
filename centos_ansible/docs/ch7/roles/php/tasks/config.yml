@@ -1,0 +1,8 @@
+---
+  - name: copy index.php file
+    copy: >
+      src=index.php
+      dest=/var/www/html/index.php
+      owner=root
+      group=root
+      mode=0644
