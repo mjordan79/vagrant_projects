@@ -1,0 +1,122 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Creates an environment with a variable number of nodes, each visible in the private subnetwork.
+# Node 1 is supposed to be the master, the others are the workers.
+# All the nodes are based on AlmaLinux 9 and the Hyper-V hypervisor.
+# Requires the vagrant-hostmanager plugin:
+# 	Install with: vagrant plugin install vagrant-hostmanager beforehand.
+
+# For a static IP on Hyper-V, we also need to create an ad-hoc hyper-v virtual switch.
+# Please read the Powershell script in ./scripts/create-nat-hyperv-switch.ps1
+# Requires the vagrant-reload plugin:
+#   Install with: vagrant plugin install vagrant-reload
+
+# Maintainer: Renato Perini <renato.perini@gmail.com>
+
+Vagrant.require_version ">= 2.2.19"
+
+# Provisioning stuff we don't want to put in the ./scripts/bash/provision.sh script.
+$script = <<-SCRIPT
+#!/usr/bin/env bash
+
+echo "Installing neofetch ..."
+curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
+echo "neofetch --ascii_distro AlmaLinux" | tee -a $HOME/.bash_profile | tee -a /home/vagrant/.bash_profile
+echo "Installing Docker Bash completion ..."
+curl https://raw.githubusercontent.com/docker/cli/master/contrib/completion/bash/docker -o /etc/bash_completion.d/docker.sh
+
+SCRIPT
+
+Vagrant.configure(2) do |config| 
+	
+	# Config parameters for the environments
+	number_of_nodes = 1
+	cpus_per_node = 4
+	mem_per_node = 4096
+	master_node_name = "Portainer"
+	#smb_vagrant_user = ""
+	#smb_vagrant_pass = ""
+	
+	# Enable /etc/hosts handling automatically.
+	if Vagrant.has_plugin?("vagrant-hostmanager")
+		config.hostmanager.enabled = true
+		config.hostmanager.manage_host = false
+		config.hostmanager.manage_guest = true
+		config.hostmanager.ignore_private_ip = false
+		config.hostmanager.include_offline = true
+	end
+
+	# Define a start trigger.
+	config.trigger.before :up do |trigger|
+		trigger.info = "Creating 'LabSwitch' Hyper-V switch if it does not exist..."
+		trigger.run = {
+			privileged: "true", powershell_elevated_interactive: "true", path: "./scripts/powershell/create-nat-hyperv-switch.ps1"
+		}
+	end
+
+	# Define a reload trigger.
+	config.trigger.before :reload do |trigger|
+		trigger.info = "Setting Hyper-V switch to 'LabSwitch' to allow for static IP..."
+		trigger.run = {
+			privileged: "true", powershell_elevated_interactive: "true", path: "./scripts/powershell/set-hyperv-switch.ps1", args: "#{master_node_name}"
+		}
+	end
+
+	# Define an end trigger.
+	config.trigger.after :up do |trigger| 
+		trigger.info = "Multi node environment is up using #{number_of_nodes} nodes, 
+		#{cpus_per_node} CPUs per node with #{mem_per_node} KB of memory each."
+	end
+
+	# Provision the nodes.
+	(1..number_of_nodes).each do |i|
+		# First node is the master
+		if i == 1 then
+			config.vm.define "Portainer", primary: true do |master|
+				master.vm.box = "almalinux/9"
+				master.vm.hostname = 'master'
+				config.vm.provision "shell", path: "./scripts/bash/configure-static-ip.sh" do |s|
+					s.args = "#{i}"
+				end
+                config.vm.provision :reload
+				master.vm.provision "shell", path: "./scripts/bash/provision.sh"
+				#master.vm.provision "file", source: "./kubernetes.repo", destination: "/tmp/kubernetes.repo"
+				#master.vm.provision "file", source: "./fstab", destination: "/tmp/fstab"
+				master.vm.provision "shell", inline: $script
+				#master.vm.network "private_network", bridge: "LabSwitch"
+				master.vm.provider "hyperv" do |hv|
+					hv.enable_virtualization_extensions = true
+    				hv.linked_clone = true
+					hv.vmname = "Portainer"	
+					hv.cpus = cpus_per_node
+					hv.memory = mem_per_node
+				end
+				# Disable synced folder
+			    master.vm.synced_folder ".", "/vagrant", disabled: true
+				# Or enable it. Be sure to fill in the administrative username and password of your Windows account.
+				#master.vm.synced_folder "../master", "/vagrant", create: true, type: "smb",
+				#	smb_password: "#{smb_vagrant_pass}", smb_username: "#{smb_vagrant_user}"
+			end
+		else
+			# All the remaining nodes are workers.
+			config.vm.define "linux_worker#{i - 1}" do |worker|
+				worker.vm.box = "centos/7"
+				worker.vm.hostname = "worker#{i - 1}"
+				worker.vm.network "private_network", bridge: "MySwitch"
+				worker.vm.provision "shell", path: "provision.sh"
+				worker.vm.provision "file", source: "./kubernetes.repo", destination: "/tmp/kubernetes.repo"
+				worker.vm.provision "file", source: "./fstab", destination: "/tmp/fstab"
+				worker.vm.provision "shell", inline: $script
+				worker.vm.provider "hyperv" do |hv|
+					hv.enable_virtualization_extensions = true
+    				hv.linked_clone = true
+					hv.vmname = "Linux_Worker#{i - 1}"
+					hv.cpus = cpus_per_node
+					hv.memory = mem_per_node
+				end
+				#worker.vm.synced_folder "../worker#{i - 1}", "/vagrant", create: true, type: "smb"
+			end
+		end
+	end
+end
