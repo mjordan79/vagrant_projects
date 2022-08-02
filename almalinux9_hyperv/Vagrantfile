@@ -73,25 +73,24 @@ Vagrant.configure(2) do |config|
 	(1..number_of_nodes).each do |i|
 		# First node is the master
 		if i == 1 then
-			config.vm.define "Portainer", primary: true do |master|
+			config.vm.define "#{master_node_name}", primary: true do |master|
 				master.vm.box = "almalinux/9"
 				master.vm.hostname = 'master'
-				config.vm.provision "shell", path: "./scripts/bash/configure-static-ip.sh" do |s|
-					s.args = "#{i}"
-				end
-                config.vm.provision :reload
-				master.vm.provision "shell", path: "./scripts/bash/provision.sh"
-				#master.vm.provision "file", source: "./kubernetes.repo", destination: "/tmp/kubernetes.repo"
-				#master.vm.provision "file", source: "./fstab", destination: "/tmp/fstab"
-				master.vm.provision "shell", inline: $script
-				#master.vm.network "private_network", bridge: "LabSwitch"
 				master.vm.provider "hyperv" do |hv|
 					hv.enable_virtualization_extensions = true
     				hv.linked_clone = true
-					hv.vmname = "Portainer"	
+					hv.vmname = "#{master_node_name}"	
 					hv.cpus = cpus_per_node
 					hv.memory = mem_per_node
 				end
+				master.vm.provision "shell", path: "./scripts/bash/provision.sh"
+				master.vm.provision "shell", inline: $script
+				master.vm.provision "shell", path: "./scripts/bash/configure-static-ip.sh" do |s|
+					s.args = "#{i}"
+				end
+				master.vm.provision :reload
+				
+				
 				# Disable synced folder
 			    master.vm.synced_folder ".", "/vagrant", disabled: true
 				# Or enable it. Be sure to fill in the administrative username and password of your Windows account.
@@ -103,7 +102,7 @@ Vagrant.configure(2) do |config|
 			config.vm.define "linux_worker#{i - 1}" do |worker|
 				worker.vm.box = "centos/7"
 				worker.vm.hostname = "worker#{i - 1}"
-				worker.vm.network "private_network", bridge: "MySwitch"
+				#worker.vm.network "private_network", bridge: "MySwitch"
 				worker.vm.provision "shell", path: "provision.sh"
 				worker.vm.provision "file", source: "./kubernetes.repo", destination: "/tmp/kubernetes.repo"
 				worker.vm.provision "file", source: "./fstab", destination: "/tmp/fstab"
@@ -115,6 +114,7 @@ Vagrant.configure(2) do |config|
 					hv.cpus = cpus_per_node
 					hv.memory = mem_per_node
 				end
+				worker.vm.synced_folder ".", "/vagrant", disabled: true
 				#worker.vm.synced_folder "../worker#{i - 1}", "/vagrant", create: true, type: "smb"
 			end
 		end
