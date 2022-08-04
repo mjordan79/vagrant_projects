@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 echo "Setting static IP address for Hyper-V Environment" $1"...";
 
+# Deleting this stuff so the network manager will recreate it. It is necessary otherwise the environment
+# will take a huge load of time just to obtain a static IP address.
 rm -f /etc/NetworkManager/system-connections/*
 rm -f /etc/resolv.conf
 sed -i --follow-symlinks 's/\#plugins=keyfile,ifcfg-rh/no-auto-default=*/g' /etc/NetworkManager/NetworkManager.conf
 
+# No IPV6, please.
+echo "Disabling IPV6 networking completely ..."
+echo "net.ipv6.conf.all.disable_ipv6=1" >> /etc/sysctl.d/ipv6_disable.conf
+echo "net.ipv6.conf.default.disable_ipv6=1" >> /etc/sysctl.d/ipv6_disable.conf
+sysctl --load /etc/sysctl.d/ipv6_disable.conf
+
+# Static IP configuration
 cat << EOF > /etc/sysconfig/network-scripts/ifcfg-eth0
 TYPE=Ethernet
 PROXY_METHOD=none
