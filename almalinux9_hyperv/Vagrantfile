@@ -44,7 +44,7 @@ Vagrant.configure(2) do |config|
 	machine_name_prefix = "portainer"
 	regular_user = "user"
 	regular_password = "user"
-	enable_zsh = true
+	enable_zsh = false
 	provision_docker = false
 	enable_synced_folder = false
 	smb_user = ""
@@ -72,10 +72,10 @@ Vagrant.configure(2) do |config|
 
 	# Provision the nodes.
 	(1..number_of_nodes).each do |i|
-        config.vm.define "#{machine_name_prefix}_#{i}", primary: true do |master|
-	    	master.vm.box = "almalinux/9"
-	    	master.vm.hostname = "#{machine_name_prefix}#{i}"
-	    	master.vm.provider "hyperv" do |hyperv|
+        config.vm.define "#{machine_name_prefix}_#{i}", primary: true do |node|
+	    	node.vm.box = "almalinux/9"
+	    	node.vm.hostname = "#{machine_name_prefix}#{i}"
+	    	node.vm.provider "hyperv" do |hyperv|
 	    		hyperv.enable_virtualization_extensions = true
         		hyperv.linked_clone = true
 	    		hyperv.vmname = "#{machine_name_prefix}_#{i}"	
@@ -84,7 +84,7 @@ Vagrant.configure(2) do |config|
 	    	end
                     
 	    	# Define a reload trigger.
-	    	master.trigger.before :reload do |trigger|
+	    	node.trigger.before :reload do |trigger|
 	    		trigger.info = "Setting Hyper-V switch to 'LabSwitch' to allow for static IP..."
 	    		trigger.run = {
 	    			privileged: "true", powershell_elevated_interactive: "true", path: "./scripts/powershell/set-hyperv-switch.ps1", args: "#{machine_name_prefix}_#{i}"
@@ -92,36 +92,36 @@ Vagrant.configure(2) do |config|
 	    	end
     
 	    	# Install basic software and update the distro.
-			master.vm.provision "shell", path: "./scripts/bash/basic_software_provision.sh"
+			node.vm.provision "shell", path: "./scripts/bash/basic_software_provision.sh"
 			# Install Docker
 			if provision_docker == true then
-	    		master.vm.provision "shell", path: "./scripts/bash/docker_provision.sh"
+	    		node.vm.provision "shell", path: "./scripts/bash/docker_provision.sh"
 			end
 			# Install ZSH, Oh-My-ZSH, Powerline10k, Dracula Theme for tmux
 			if enable_zsh == true then
-				master.vm.provision "shell", path: "./scripts/bash/zsh_provision.sh"
+				node.vm.provision "shell", path: "./scripts/bash/zsh_provision.sh"
 			end
             # Mixed actions, mostly unrelated to each other.
-	    	master.vm.provision "shell", inline: $script
+	    	node.vm.provision "shell", inline: $script
 			# We want a normal user. With Bash or ZSH if available.
-	    	master.vm.provision "shell", path: "./scripts/bash/add-sudo-user.sh" do |s|
+	    	node.vm.provision "shell", path: "./scripts/bash/add-sudo-user.sh" do |s|
 	    		s.args = ["#{regular_user}", "#{regular_password}"]
 	    	end
 			# And we have to work with static IPs. We don't need IPV6.
-	    	master.vm.provision "shell", path: "./scripts/bash/configure-static-ip.sh" do |s|
+	    	node.vm.provision "shell", path: "./scripts/bash/configure-static-ip.sh" do |s|
 	    		s.args = "#{i}"
 	    	end
 				    			
 	    	# Reload the machine.
-	    	master.vm.provision :reload
+	    	node.vm.provision :reload
 	    	
 			if enable_synced_folder == true then
 	    		# Enable synced folder. Be sure to fill in the administrative username and password of your Windows account.
-	    		master.vm.synced_folder "./#{machine_name_prefix}_#{i}", "/vagrant", create: true, type: "smb",
+	    		node.vm.synced_folder "./#{machine_name_prefix}_#{i}", "/vagrant", create: true, type: "smb",
 	    			smb_password: "#{smb_pass}", smb_username: "#{smb_user}"
 	    	else
 				# Or disable synced folder
-				master.vm.synced_folder ".", "/vagrant", disabled: true	
+				node.vm.synced_folder ".", "/vagrant", disabled: true	
 			end
 	    end
 	end
