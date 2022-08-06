@@ -82,11 +82,16 @@ ZSH_TMUX_AUTOSTART=false
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git docker docker-compose tmux vi-mode zsh-autosuggestions zsh-syntax-highlighting)
 
+TERM=xterm-256color
+ZSH_TMUX_AUTOSTART=true
+ZSH_TMUX_AUTOCONNECT=false
+ZSH_TMUX_FIXTERM=true
+ZSH_TMUX_FIXTERM_WITH_256COLOR=screen-256color
+neofetch --ascii_distro AlmaLinux
+
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
-neofetch --ascii_distro AlmaLinux
-
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
@@ -138,7 +143,7 @@ cp ~/zshrc_dump ~/.zshrc
 cp ~/zshrc_dump /etc/skel/.zshrc
 rm -f ~/zshrc_dump
 
-
+# Let's generate a tmux.conf enabling some features.
 cat << EOF > ~/.tmux.conf
 # List of plugins
 set -g @plugin 'tmux-plugins/tpm'
@@ -157,6 +162,7 @@ set -g @dracula-show-left-icon session
 set -g @dracula-cpu-usage true
 set -g @dracula-ram-usage true
 set -g @dracula-day-month true
+set -g @dracula-refresh-rate 1
 set -g @dracula-military-time true
 set -g @dracula-show-flags true 
 
@@ -173,3 +179,21 @@ run '~/.tmux/plugins/tpm/tpm'
 EOF
 
 cp ~/.tmux.conf /etc/skel
+
+# Oh, we will also provision a Dracula theme on Vim with Lightline plugin, ok?
+mkdir -p ~/.vim/pack/themes/start
+git clone https://github.com/dracula/vim.git ~/.vim/pack/themes/start/dracula
+
+# Clone Lightline
+mkdir -p ~/.vim/pack/plugins/start
+git clone https://github.com/itchyny/lightline.vim ~/.vim/pack/plugins/start/lightline
+
+cat <<EOF > ~/.vimrc
+set laststatus=2
+packadd! dracula
+syntax enable
+colorscheme dracula
+EOF
+
+cp -a ~/.vim /etc/skel
+cp ~/.vimrc /etc/skel
