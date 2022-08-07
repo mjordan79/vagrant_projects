@@ -38,16 +38,16 @@ SCRIPT
 Vagrant.configure(2) do |config| 
 	
 	# Config parameters for the environments
-	number_of_nodes = 2
+	number_of_nodes = 1
 	cpus_per_node = 4
 	mem_per_node = 4096
-	machine_name_prefix = "portainer"
+	machine_name_prefix = "pnode"
 	regular_user = "user"
 	regular_password = "user"
 	enable_zsh = false
 	enable_docker = false
 	enable_java = false
-	enable_nfs = true
+	enable_nfs = false
 	enable_synced_folder = false
 	smb_user = ""
 	smb_pass = ""
@@ -116,9 +116,6 @@ Vagrant.configure(2) do |config|
 				    			
 	    	# Reload the machine.
 	    	node.vm.provision :reload
-
-            # Just configure the IPs
-			node.vm.provision :hostmanager
             
 			# Enable Java Development Kit (JDK 17 from the Eclipse Temurin Project)
 			if enable_java == true then
@@ -131,6 +128,9 @@ Vagrant.configure(2) do |config|
 					s.args = "#{i}"
 				end
 			end
+
+			# Just configure the IPs
+			node.vm.provision :hostmanager, run: 'always'
 	    	
 			if enable_synced_folder == true then
 	    		# Enable synced folder. Be sure to fill in the administrative username and password of your Windows account.
@@ -140,6 +140,6 @@ Vagrant.configure(2) do |config|
 				# Or disable synced folder
 				node.vm.synced_folder ".", "/vagrant", disabled: true	
 			end
-	    end
+	    end		
 	end
 end
