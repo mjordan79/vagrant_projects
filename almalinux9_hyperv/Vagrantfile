@@ -40,13 +40,14 @@ Vagrant.configure(2) do |config|
 	# Config parameters for the environments
 	number_of_nodes = 1
 	cpus_per_node = 4
-	mem_per_node = 4096
+	mem_per_node = 5120
 	machine_name_prefix = "pnode"
 	regular_user = "user"
 	regular_password = "user"
 	enable_zsh = false
 	enable_docker = false
 	enable_java = false
+	enable_gitea = false
 	enable_nfs = false
 	enable_synced_folder = false
 	smb_user = ""
@@ -131,9 +132,16 @@ Vagrant.configure(2) do |config|
 
 			# Just configure the IPs
 			node.vm.provision :hostmanager, run: 'always'
+
+			# Provision the Gitea Git Server
+			if enable_gitea == true then
+				node.vm.provision "shell", path: "./scripts/bash/gitea_provision.sh" do |s|
+					s.args = "#{i}"
+				end
+			end
 	    	
+			# Enable synced folder. Be sure to fill in the administrative username and password of your Windows account.
 			if enable_synced_folder == true then
-	    		# Enable synced folder. Be sure to fill in the administrative username and password of your Windows account.
 	    		node.vm.synced_folder "./#{machine_name_prefix}_#{i}", "/vagrant", create: true, type: "smb",
 	    			smb_password: "#{smb_pass}", smb_username: "#{smb_user}"
 	    	else
