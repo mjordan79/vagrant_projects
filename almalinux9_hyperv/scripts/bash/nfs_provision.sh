@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Configuring an NFS Server on the first VM. All the other VMs are NFS clients.
+# We can safely assume the first VM has always an IP: 192.169.0.11
+# Look at the script: bash/configure_static_ip.sh for how IPs are assigned.
 NO_NODE=$1
 
 echo "NFS Provisioning."
@@ -15,7 +18,7 @@ then
     systemctl enable --now nfs-server
     exportfs -arv
 else
-    echo "I'm on node 192.169.0.1$NO_NODE ... Configuring NFS client"
+    echo "I'm on node 192.169.0.$(expr 10 + $NO_NODE) ... Configuring NFS client"
     dnf install -yq nfs-utils nfs4-acl-tools
     showmount -e 192.169.0.11
     mkdir -p /mnt/nfs/data

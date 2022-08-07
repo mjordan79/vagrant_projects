@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo "Setting static IP address for Hyper-V Environment" $1"...";
+echo "Setting static IP address for Hyper-V Environment" $1"... 102.169.0.$(expr 10 + $1)";
 
 # Deleting this stuff so the network manager will recreate it. It is necessary otherwise the environment
 # will take a huge load of time just to obtain a static IP address.
@@ -13,7 +13,7 @@ echo "net.ipv6.conf.all.disable_ipv6=1" >> /etc/sysctl.d/ipv6_disable.conf
 echo "net.ipv6.conf.default.disable_ipv6=1" >> /etc/sysctl.d/ipv6_disable.conf
 sysctl --load /etc/sysctl.d/ipv6_disable.conf
 
-# Static IP configuration
+# Static IP configuration (first VM will always have *.11 IP)
 cat << EOF > /etc/sysconfig/network-scripts/ifcfg-eth0
 TYPE=Ethernet
 PROXY_METHOD=none
@@ -25,7 +25,7 @@ IPV6INIT=no
 NAME=eth0
 DEVICE=eth0
 ONBOOT=yes
-IPADDR=192.169.0.1$1
+IPADDR=192.169.0.$(expr 10 + $1)
 PREFIX=24
 GATEWAY=192.169.0.1
 DNS1=8.8.8.8

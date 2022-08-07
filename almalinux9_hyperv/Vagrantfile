@@ -38,7 +38,7 @@ SCRIPT
 Vagrant.configure(2) do |config| 
 	
 	# Config parameters for the environments
-	number_of_nodes = 1
+	number_of_nodes = 2
 	cpus_per_node = 4
 	mem_per_node = 4096
 	machine_name_prefix = "portainer"
@@ -47,7 +47,7 @@ Vagrant.configure(2) do |config|
 	enable_zsh = false
 	enable_docker = false
 	enable_java = false
-	enable_nfs = false
+	enable_nfs = true
 	enable_synced_folder = false
 	smb_user = ""
 	smb_pass = ""
