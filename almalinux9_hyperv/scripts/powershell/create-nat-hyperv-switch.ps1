@@ -48,7 +48,7 @@ else {
 If ("192.169.0.0/24" -in (Get-NetNAT | Select-Object -ExpandProperty InternalIPInterfaceAddressPrefix) -eq $FALSE) {
     'Registering new NAT adapter for 192.169.0.0/24 on Windows Hyper-V host...'
 
-    New-NetNAT -Name "LabNAT" -InternalIPInterfaceAddressPrefix 192.169.0.0/24
+    New-NetNAT -Name LabNAT -InternalIPInterfaceAddressPrefix 192.169.0.0/24
 }
 else {
     '"192.169.0.0/24" for static IP configuration already registered: skipping.'

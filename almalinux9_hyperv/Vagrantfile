@@ -12,6 +12,9 @@
 # Requires the vagrant-reload plugin:
 #   Install globally with: vagrant plugin install vagrant-reload
 # Otherwise it will be installed locally each time you create the environments.
+# 
+# IMPORTANT: When asked, choose the Default Switch as the network adapter. It will be switched automatically
+# to LabSwitch after the first boot.
 
 # Maintainer: Renato Perini <renato.perini@gmail.com>
 
@@ -38,17 +41,17 @@ SCRIPT
 Vagrant.configure(2) do |config| 
 	
 	# Config parameters for the environments
-	number_of_nodes = 1
+	number_of_nodes = 3
 	cpus_per_node = 4
 	mem_per_node = 5120
 	machine_name_prefix = "pnode"
 	regular_user = "user"
 	regular_password = "user"
-	enable_zsh = false
-	enable_docker = false
+	enable_zsh = true
+	enable_docker = true
 	enable_java = false
 	enable_gitea = false
-	enable_nfs = false
+	enable_nfs = true
 	enable_synced_folder = false
 	smb_user = ""
 	smb_pass = ""
