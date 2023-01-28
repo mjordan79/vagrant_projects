@@ -3,7 +3,7 @@
 
 # Creates an environment with a variable number of nodes, each visible in the private subnetwork.
 # Node 1 is supposed to be the master, the others are the workers.
-# All the nodes are based on AlmaLinux 9 and the Hyper-V hypervisor.
+# All the nodes are based on Ubuntu 22.04 LTS and the Hyper-V hypervisor.
 # Requires the vagrant-hostmanager plugin:
 # 	Install globally with: vagrant plugin install vagrant-hostmanager beforehand.
 
@@ -27,31 +27,30 @@ $script = <<-SCRIPT
 echo "Updating neofetch ..."
 curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
 chmod +x /usr/bin/neofetch
-echo "neofetch --ascii_distro AlmaLinux" | tee -a $HOME/.bash_profile | tee -a /home/vagrant/.bash_profile
+echo "neofetch --ascii_distro Ubuntu" | tee -a $HOME/.bash_profile | tee -a /home/vagrant/.bash_profile
+echo "alias ls='ls --color'" | tee -a $HOME/.bashrc | tee -a /home/vagrant/.bashrc
+echo "source ./.bashrc" | tee -a $HOME/.bash_profile
 echo "Disabling SELinux ..."
 setenforce 0
-sed -i --follow-symlinks 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
-echo "Enabling X11 Forwarding request for SSH ..."
-sed -i --follow-symlinks 's/\#AddressFamily any/AddressFamily inet/g' /etc/ssh/sshd_config
-echo "Enabling SSH root login with password (root / vagrant) ..."
-sed -i --follow-symlinks 's/\#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
+sed -i --follow-symlinks 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
 
 SCRIPT
 
 Vagrant.configure(2) do |config| 
 	
 	# Config parameters for the environments
-	number_of_nodes = 6
-	cpus_per_node = 8
+	number_of_nodes = 1
+	cpus_per_node = 16
 	mem_per_node = 6144
-	machine_name_prefix = "pnode"
+	machine_name_prefix = "knode"
 	regular_user = "user"
 	regular_password = "user"
-	enable_zsh = true
+	root_password = "vagrant"
+	enable_zsh = false
 	enable_docker = false
-	enable_java = false
+	enable_java = true
 	enable_gitea = false
-	enable_nfs = true
+	enable_nfs = false
 	enable_synced_folder = false
 	smb_user = ""
 	smb_pass = ""
@@ -79,13 +78,14 @@ Vagrant.configure(2) do |config|
 	# Provision the nodes.
 	(1..number_of_nodes).each do |i|
         config.vm.define "#{machine_name_prefix}_#{i}", primary: true do |node|
-	    	node.vm.box = "almalinux/9"
+	    	node.vm.box = "generic/ubuntu2204"
 	    	node.vm.hostname = "#{machine_name_prefix}#{i}"
 	    	node.vm.provider "hyperv" do |hyperv|
 	    		hyperv.enable_virtualization_extensions = true
         		hyperv.linked_clone = true
 	    		hyperv.vmname = "#{machine_name_prefix}_#{i}"	
 	    		hyperv.cpus = cpus_per_node
+				hyperv.maxmemory = nil
 	    		hyperv.memory = mem_per_node
 	    	end
                     
@@ -111,11 +111,11 @@ Vagrant.configure(2) do |config|
 	    	node.vm.provision "shell", inline: $script
 			# We want a normal user. With Bash or ZSH if available.
 	    	node.vm.provision "shell", path: "./scripts/bash/add_sudo_user.sh" do |s|
-	    		s.args = ["#{regular_user}", "#{regular_password}"]
+	    		s.args = ["#{regular_user}", "#{regular_password}", "#{root_password}"]
 	    	end
 			# And we have to work with static IPs. We don't need IPV6.
 	    	node.vm.provision "shell", path: "./scripts/bash/configure_static_ip.sh" do |s|
-	    		s.args = "#{i}"
+	        	s.args = "#{i}"
 	    	end
 				    			
 	    	# Reload the machine.

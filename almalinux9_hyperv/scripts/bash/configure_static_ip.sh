@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo "Setting static IP address for Hyper-V Environment" $1"... 102.169.0.$(expr 10 + $1)";
+echo "Setting static IP address for Hyper-V Environment" $1"... 192.169.0.$(expr 10 + $1)";
 
 # Deleting this stuff so the network manager will recreate it. It is necessary otherwise the environment
 # will take a huge load of time just to obtain a static IP address.

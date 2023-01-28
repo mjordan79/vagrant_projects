@@ -9,23 +9,23 @@ echo "NFS Provisioning."
 if [ $NO_NODE -eq 1 ] 
 then
     echo "I'm on the first node... Configuring the NFS server ..."
-    dnf install -yq nfs-utils
+    apt-get install -yq nfs-kernel-server
     mkdir -p /nfs/data
     mkdir -p /nfs/logs
-    chown -R nobody:nobody /nfs
+    chown -R nobody:nogroup /nfs
     echo "/nfs/data  *(rw,sync,no_root_squash,no_subtree_check)" > /etc/exports
     echo "/nfs/logs  *(rw,sync,no_root_squash,no_subtree_check)" >> /etc/exports
-    systemctl enable --now nfs-server
+    systemctl enable --now nfs-kernel-server
     exportfs -arv
 else
-    echo "I'm on node 192.169.0.$(expr 10 + $NO_NODE) ... Configuring NFS client"
-    dnf install -yq nfs-utils nfs4-acl-tools
-    showmount -e 192.169.0.11
+    echo "I'm on node 192.169.0.$(expr 20 + $NO_NODE) ... Configuring NFS client"
+    apt-get install -yq nfs-common
+    showmount -e 192.169.0.21
     mkdir -p /mnt/nfs/data
     mkdir -p /mnt/nfs/logs
    
-    mount -t nfs  192.169.0.11:/nfs/data /mnt/nfs/data
-    mount -t nfs  192.169.0.11:/nfs/logs /mnt/nfs/logs
-    echo "192.169.0.11:/nfs/data     /mnt/nfs/data  nfs     defaults 0 0" >> /etc/fstab
-    echo "192.169.0.11:/nfs/logs     /mnt/nfs/logs  nfs     defaults 0 0" >> /etc/fstab
+    mount -t nfs  192.169.0.21:/nfs/data /mnt/nfs/data
+    mount -t nfs  192.169.0.21:/nfs/logs /mnt/nfs/logs
+    echo "192.169.0.21:/nfs/data     /mnt/nfs/data  nfs     defaults 0 0" >> /etc/fstab
+    echo "192.169.0.21:/nfs/logs     /mnt/nfs/logs  nfs     defaults 0 0" >> /etc/fstab
 fi
