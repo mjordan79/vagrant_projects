@@ -46,9 +46,10 @@ Vagrant.configure(2) do |config|
 	regular_user = "user"
 	regular_password = "user"
 	root_password = "vagrant"
+	update_distro = true
 	enable_zsh = false
 	enable_docker = false
-	enable_java = true
+	enable_java = false
 	enable_gitea = false
 	enable_nfs = false
 	enable_synced_folder = false
@@ -97,7 +98,11 @@ Vagrant.configure(2) do |config|
 	    		}
 	    	end
     
-	    	# Install basic software and update the distro.
+			# Update the distro
+			if update_distro == true then
+	    		node.vm.provision "shell", path: "./scripts/bash/update_distro.sh"
+			end
+	    	# Install basic software.
 			node.vm.provision "shell", path: "./scripts/bash/basic_software_provision.sh"
 			# Install Docker
 			if enable_docker == true then
