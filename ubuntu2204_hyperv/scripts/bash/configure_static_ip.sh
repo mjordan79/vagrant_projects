@@ -3,6 +3,9 @@
 # Based on ideas taken here: https://superuser.com/questions/1354658/hyperv-static-ip-with-vagrant
 echo "Setting static IP address for Hyper-V Environment" $1"... 192.169.0.$(expr 20 + $1)";
 
+# We clean the /etc/hosts.
+cat /dev/null > /etc/hosts
+
 # Static IP configuration (first VM will always have *.21 IP)
 cat << EOF > /etc/netplan/01-netcfg.yaml
 network:
@@ -10,8 +13,11 @@ network:
   ethernets:
     eth0:
       dhcp4: no
+      dhcp6: no
       addresses: [192.169.0.$(expr 20 + $1)/24]
-      gateway4: 192.169.0.1
+      routes:
+      - to: default
+        via: 192.169.0.1
       nameservers:
         addresses: [8.8.8.8,8.8.4.4]
 EOF
