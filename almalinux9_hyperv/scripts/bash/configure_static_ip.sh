@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
+
+# Based on ideas taken here: https://superuser.com/questions/1354658/hyperv-static-ip-with-vagrant
 echo "Setting static IP address for Hyper-V Environment" $1"... 192.169.0.$(expr 10 + $1)";
 
 # Deleting this stuff so the network manager will recreate it. It is necessary otherwise the environment
 # will take a huge load of time just to obtain a static IP address.
 rm -f /etc/NetworkManager/system-connections/*
 rm -f /etc/resolv.conf
+# We clean the /etc/hosts.
+echo "127.0.0.1 localhost" > /etc/hosts
 sed -i --follow-symlinks 's/\#plugins=keyfile,ifcfg-rh/no-auto-default=*/g' /etc/NetworkManager/NetworkManager.conf
 
 # No IPV6, please.

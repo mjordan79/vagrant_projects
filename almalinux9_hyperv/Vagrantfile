@@ -31,8 +31,8 @@ echo "neofetch --ascii_distro AlmaLinux" | tee -a $HOME/.bash_profile | tee -a /
 echo "Disabling SELinux ..."
 setenforce 0
 sed -i --follow-symlinks 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
-echo "Enabling X11 Forwarding request for SSH ..."
-sed -i --follow-symlinks 's/\#AddressFamily any/AddressFamily inet/g' /etc/ssh/sshd_config
+#echo "Enabling X11 Forwarding request for SSH ..."
+#sed -i --follow-symlinks 's/\#AddressFamily any/AddressFamily inet/g' /etc/ssh/sshd_config
 echo "Enabling SSH root login with password (root / vagrant) ..."
 sed -i --follow-symlinks 's/\#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config
 
@@ -41,9 +41,9 @@ SCRIPT
 Vagrant.configure(2) do |config| 
 	
 	# Config parameters for the environments
-	number_of_nodes = 1
+	number_of_nodes = 2
 	cpus_per_node = 16
-	mem_per_node = 6144
+	mem_per_node = 4096
 	machine_name_prefix = "pnode"
 	regular_user = "user"
 	regular_password = "user"
@@ -87,6 +87,7 @@ Vagrant.configure(2) do |config|
         		hyperv.linked_clone = true
 	    		hyperv.vmname = "#{machine_name_prefix}_#{i}"	
 	    		hyperv.cpus = cpus_per_node
+				hyperv.maxmemory = nil
 	    		hyperv.memory = mem_per_node
 	    	end
                     
