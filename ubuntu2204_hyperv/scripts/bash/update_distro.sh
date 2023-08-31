@@ -2,4 +2,4 @@
 
 # Update the distribution software.
 echo "Attempting to update the distribution ...";
-apt-get update -yq && apt-get upgrade -yq
+apt-get update -yq && apt-get full-upgrade -yq
