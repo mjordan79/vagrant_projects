@@ -18,7 +18,7 @@
 
 # Maintainer: Renato Perini <renato.perini@gmail.com>
 
-Vagrant.require_version ">= 2.2.19"
+Vagrant.require_version ">= 2.3.7"
 
 # Provisioning stuff we don't want to put in the ./scripts/bash/provision.sh script.
 $script = <<-SCRIPT
@@ -41,15 +41,23 @@ Vagrant.configure(2) do |config|
 	
 	# Config parameters for the environments
 	number_of_nodes = 5
-	cpus_per_node = 16
-	mem_per_node = 6144
-	machine_name_prefix = "knode"
+	cpus_per_node = 32
+	mem_per_node = 4096
+	machine_name_prefix = "node"
 	regular_user = "user"
 	regular_password = "user"
 	root_password = "vagrant"
 	update_distro = true
 	enable_zsh = false
 	enable_docker = false
+	# enable_kubernetes = true subdivides the total number of nodes in 3 control plane nodes and 1 load balancer node. The remaining nodes
+	# are worker nodes. So if you choose, for example, number_of_nodes = 6, it will create 1 load balancer with 1GB of RAM,
+	# 3 control plane nodes and 2 worker nodes. Make sure number_of_nodes in this case is always bigger than 4. Memory and CPUs for 
+	# these spacial nodes are fixed: 1024M / 3 vCPUs for the load balancer, 2048M / 4 vCPUs for the control plane nodes. The worker nodes
+	# are associated with mem_per_node amount and cpus_per_node. The load balancer node will install (and configure) an HAProxy instance 
+	# while it will be installed Kubernetes through MicroK8s / snapd on the other nodes. 
+	# If enable_kubernetes = false, the nodes will be created all equal following the specs given with the cpus_per_node and mem_per_node parameters.
+	enable_kubernetes = true
 	enable_java = false
 	enable_gitea = false
 	enable_nfs = true
@@ -79,23 +87,42 @@ Vagrant.configure(2) do |config|
 
 	# Provision the nodes.
 	(1..number_of_nodes).each do |i|
-        config.vm.define "#{machine_name_prefix}_#{i}", primary: true do |node|
+        config.vm.define "#{machine_name_prefix}-#{i}", primary: true do |node|
 	    	node.vm.box = "generic/ubuntu2204"
-	    	node.vm.hostname = "#{machine_name_prefix}#{i}"
+			if enable_kubernetes == true && i == 1
+				node.vm.hostname = "#{machine_name_prefix}-lb"
+			elsif enable_kubernetes == true && i == 2 || i == 3 || i == 4 
+				node.vm.hostname = "#{machine_name_prefix}-master#{i - 1}"
+			elsif enable_kubernetes == true && i > 4
+	    	    node.vm.hostname = "#{machine_name_prefix}-worker#{i - 4}"
+			else
+				node.vm.hostname = "#{machine_name_prefix}-#{i}"
+			end
 	    	node.vm.provider "hyperv" do |hyperv|
 	    		hyperv.enable_virtualization_extensions = true
         		hyperv.linked_clone = true
-	    		hyperv.vmname = "#{machine_name_prefix}_#{i}"	
-	    		hyperv.cpus = cpus_per_node
+				if enable_kubernetes == true && i == 1
+					hyperv.cpus = 3
+					hyperv.memory = 1024
+				elsif enable_kubernetes == true &&  i == 2 || i == 3 || i == 4 
+					hyperv.cpus = 4
+					hyperv.memory = 2048
+				elsif enable_kubernetes = true && i > 4
+					hyperv.cpus = cpus_per_node
+					hyperv.memory = mem_per_node
+				else 
+					hyperv.cpus = cpus_per_node
+					hyperv.memory = mem_per_node
+				end
+				hyperv.vmname = "#{machine_name_prefix}-#{i}"
 				hyperv.maxmemory = nil
-	    		hyperv.memory = mem_per_node
 	    	end
                     
 	    	# Define a reload trigger.
 	    	node.trigger.before :reload do |trigger|
 	    		trigger.info = "Setting Hyper-V switch to 'LabSwitch' to allow for static IP..."
 	    		trigger.run = {
-	    			privileged: "true", powershell_elevated_interactive: "true", path: "./scripts/powershell/set-hyperv-switch.ps1", args: "#{machine_name_prefix}_#{i}"
+	    			privileged: "true", powershell_elevated_interactive: "true", path: "./scripts/powershell/set-hyperv-switch.ps1", args: "#{machine_name_prefix}-#{i}"
 	    		}
 	    	end
     
@@ -127,6 +154,11 @@ Vagrant.configure(2) do |config|
 	    	# Reload the machine.
 	    	node.vm.provision :reload
             
+			# Provision HAProxy in the load balancer node if enable_kubernetes is enabled.
+            if enable_kubernetes == true && i == 1
+                node.vm.provision "shell", path: "./scripts/bash/haproxy_provision.sh"
+			end
+
 			# Enable Java Development Kit (JDK 17 from the Eclipse Temurin Project)
 			if enable_java == true then
                 node.vm.provision "shell", path: "./scripts/bash/java_provision.sh"
@@ -135,7 +167,8 @@ Vagrant.configure(2) do |config|
 			# Provision NFS Server / Clients
 			if enable_nfs == true then
                 node.vm.provision "shell", path: "./scripts/bash/nfs_provision.sh" do |s|
-					s.args = "#{i}"
+					# If enable_kubernetes == true, we enable the NFS server only starting from first control plane node.
+					s.args = ["#{i}", "#{enable_kubernetes}"]
 				end
 			end
 
