@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Configuring an NFS Server on the first VM. All the other VMs are NFS clients.
-# We can safely assume the first VM has always an IP: 192.169.0.11
+# The first VM depends by the fact enable_kubernetes is set or not. If set, the 
+# first node is 192.169.0.22. Otherwise it is 192.169.0.21
 # Look at the script: bash/configure_static_ip.sh for how IPs are assigned.
 NO_NODE=$1
 ENABLE_KUBERNETES=$2
@@ -55,7 +56,7 @@ else
   if [ $NO_NODE -eq 1 ]
   then 
     skip_installation
-  elif [ $NO_NODE  -eq 2 ]
+  elif [ $NO_NODE -eq 2 ]
   then 
     nfs_on_first_node
   else

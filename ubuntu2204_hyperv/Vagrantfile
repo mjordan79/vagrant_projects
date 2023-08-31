@@ -156,7 +156,10 @@ Vagrant.configure(2) do |config|
             
 			# Provision HAProxy in the load balancer node if enable_kubernetes is enabled.
             if enable_kubernetes == true && i == 1
-                node.vm.provision "shell", path: "./scripts/bash/haproxy_provision.sh"
+                node.vm.provision "shell", path: "./scripts/bash/haproxy_provision.sh" do |s|
+					# If enable_kubernetes is set and we're on the first node, provision HAProxy
+					s.args = ["#{i}", "#{enable_kubernetes}"]
+				end
 			end
 
 			# Enable Java Development Kit (JDK 17 from the Eclipse Temurin Project)
