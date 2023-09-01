@@ -53,16 +53,16 @@ frontend stats
 frontend kubernetes-apiserver-frontend
     mode tcp
     option tcplog
-    bind $IP_ADDRESS:6443
+    bind $IP_ADDRESS:16443
     default_backend kubernetes-apiserver-backend
 
 backend kubernetes-apiserver-backend
     mode tcp
     option tcp-check
     balance roundrobin
-    server kmaster1 192.169.0.22:6443 check fall 3 rise 2
-    server kmaster2 192.169.0.23:6443 check fall 3 rise 2
-    server kmaster3 192.169.0.24:6443 check fall 3 rise 2
+    server kmaster1 192.169.0.22:16443 check fall 3 rise 2
+    server kmaster2 192.169.0.23:16443 check fall 3 rise 2
+    server kmaster3 192.169.0.24:16443 check fall 3 rise 2
 EOF
 }
 

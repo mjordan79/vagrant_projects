@@ -20,7 +20,7 @@
 
 Vagrant.require_version ">= 2.3.7"
 
-# Provisioning stuff we don't want to put in the ./scripts/bash/provision.sh script.
+# Provisioning stuff we don't want to put in other script files.
 $script = <<-SCRIPT
 #!/usr/bin/env bash
 
@@ -34,6 +34,8 @@ echo "source ./.bashrc" | tee -a $HOME/.bash_profile
 echo "Disabling SELinux ..."
 setenforce 0
 sed -i --follow-symlinks 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
+sed -i 's/^DNS=.*/DNS=8.8.8.8/g' /etc/systemd/resolved.conf
+sed -i 's/^FallbackDNS=.*/FallbackDNS=8.8.4.4/g' /etc/systemd/resolved.conf
 
 SCRIPT
 
@@ -42,7 +44,7 @@ Vagrant.configure(2) do |config|
 	# Config parameters for the environments
 	number_of_nodes = 5
 	cpus_per_node = 32
-	mem_per_node = 4096
+	mem_per_node = 8192
 	machine_name_prefix = "node"
 	regular_user = "user"
 	regular_password = "user"
@@ -58,6 +60,7 @@ Vagrant.configure(2) do |config|
 	# while it will be installed Kubernetes through MicroK8s / snapd on the other nodes. 
 	# If enable_kubernetes = false, the nodes will be created all equal following the specs given with the cpus_per_node and mem_per_node parameters.
 	enable_kubernetes = true
+	kubernetes_version = 1.28
 	enable_java = false
 	enable_gitea = false
 	enable_nfs = true
@@ -150,6 +153,12 @@ Vagrant.configure(2) do |config|
 	    	node.vm.provision "shell", path: "./scripts/bash/configure_static_ip.sh" do |s|
 	        	s.args = "#{i}"
 	    	end
+
+			# Write the IPS into the /etc/hosts file. Still not the static IP but we need the entry to add the localhost alias in the next sed command.
+			node.vm.provision :hostmanager, run: 'always'
+
+			# Include the alias 127.0.0.1 to localhost in /etc/hosts file.
+			node.vm.provision :shell, run: 'always', privileged: 'true', inline: "sed -i '1s/.*/127.0.0.1 localhost/' /etc/hosts"
 				    			
 	    	# Reload the machine.
 	    	node.vm.provision :reload
@@ -159,6 +168,13 @@ Vagrant.configure(2) do |config|
                 node.vm.provision "shell", path: "./scripts/bash/haproxy_provision.sh" do |s|
 					# If enable_kubernetes is set and we're on the first node, provision HAProxy
 					s.args = ["#{i}", "#{enable_kubernetes}"]
+				end
+			end
+
+			# Provision Kubernetes through MicroK8S. Provisioning occurs from node 2 onwards.
+            if enable_kubernetes == true && i >= 2
+                node.vm.provision "shell", path: "./scripts/bash/kubernetes_provision.sh" do |s|
+					s.args = ["#{i}", "#{kubernetes_version}"]
 				end
 			end
 
@@ -177,7 +193,7 @@ Vagrant.configure(2) do |config|
 
 			# Just configure the IPs
 			node.vm.provision :hostmanager, run: 'always'
-
+			
 			# Provision the Gitea Git Server
 			if enable_gitea == true then
 				node.vm.provision "shell", path: "./scripts/bash/gitea_provision.sh" do |s|
