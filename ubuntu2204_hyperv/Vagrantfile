@@ -42,9 +42,9 @@ SCRIPT
 Vagrant.configure(2) do |config| 
 	
 	# Config parameters for the environments
-	number_of_nodes = 5
+	number_of_nodes = 6
 	cpus_per_node = 32
-	mem_per_node = 8192
+	mem_per_node = 16384
 	machine_name_prefix = "node"
 	regular_user = "user"
 	regular_password = "user"
