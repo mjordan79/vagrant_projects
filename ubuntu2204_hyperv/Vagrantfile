@@ -30,7 +30,6 @@ chmod +x /usr/bin/neofetch
 
 grep -qxF 'neofetch --ascii_distro Ubuntu' $HOME/.bash_profile || echo 'neofetch --ascii_distro Ubuntu' >> $HOME/.bash_profile
 grep -qxF 'neofetch --ascii_distro Ubuntu' /home/vagrant/.bash_profile || echo 'neofetch --ascii_distro Ubuntu' >> /home/vagrant/.bash_profile
-echo "neofetch --ascii_distro Ubuntu" | tee -a $HOME/.bash_profile | tee -a /home/vagrant/.bash_profile
 systemctl disable --now ufw
 grep -qxF 'alias ls="ls --color"' $HOME/.bashrc || echo 'neofetch --ascii_distro Ubuntu' >> $HOME/.bashrc
 grep -qxF 'alias ls="ls --color"' /home/vagrant/.bashrc || echo 'neofetch --ascii_distro Ubuntu' >> /home/vagrant/.bashrc
