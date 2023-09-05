@@ -27,10 +27,14 @@ $script = <<-SCRIPT
 echo "Updating neofetch ..."
 curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
 chmod +x /usr/bin/neofetch
+
+grep -qxF 'neofetch --ascii_distro Ubuntu' $HOME/.bash_profile || echo 'neofetch --ascii_distro Ubuntu' >> $HOME/.bash_profile
+grep -qxF 'neofetch --ascii_distro Ubuntu' /home/vagrant/.bash_profile || echo 'neofetch --ascii_distro Ubuntu' >> /home/vagrant/.bash_profile
 echo "neofetch --ascii_distro Ubuntu" | tee -a $HOME/.bash_profile | tee -a /home/vagrant/.bash_profile
 systemctl disable --now ufw
-echo "alias ls='ls --color'" | tee -a $HOME/.bashrc | tee -a /home/vagrant/.bashrc
-echo "source ./.bashrc" | tee -a $HOME/.bash_profile
+grep -qxF 'alias ls="ls --color"' $HOME/.bashrc || echo 'neofetch --ascii_distro Ubuntu' >> $HOME/.bashrc
+grep -qxF 'alias ls="ls --color"' /home/vagrant/.bashrc || echo 'neofetch --ascii_distro Ubuntu' >> /home/vagrant/.bashrc
+grep -qxF 'source ./.bashrc' $HOME/.bash_profile || echo 'source ./.bashrc' >> $HOME/.bash_profile
 echo "Disabling SELinux ..."
 setenforce 0
 sed -i --follow-symlinks 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
