@@ -2,4 +2,4 @@
 
 # Update the distribution software.
 echo "Attempting to update the distribution ...";
-apt-get update -yq && apt-get full-upgrade -yq
+apt update -yq && apt full-upgrade -yq && apt autoremove -yq

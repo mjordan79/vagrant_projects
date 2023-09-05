@@ -10,7 +10,7 @@ IP_ADDRESS=$(hostname -i)
 
 nfs_on_first_node () {
     echo "I'm on the first node... Configuring the NFS server ..."
-    apt-get install -yq nfs-kernel-server
+    apt install -yq nfs-kernel-server
     mkdir -p /nfs/data
     mkdir -p /nfs/logs
     chown -R nobody:nogroup /nfs
@@ -24,7 +24,7 @@ nfs_on_first_node () {
 
 nfs_on_next_nodes () {
     echo "I'm on node $IP_ADDRESS ... Configuring NFS client"
-    apt-get install -yq nfs-common
+    apt install -yq nfs-common
     showmount -e $1
     mkdir -p /mnt/nfs/data
     mkdir -p /mnt/nfs/logs

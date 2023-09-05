@@ -70,7 +70,7 @@ echo "Provisioning HAProxy because enable_kubernetes = true and we're on the fir
 
 if [ "$ENABLE_KUBERNETES" = "true" -a $NO_NODE -eq 1 ] 
 then 
-    apt-get install haproxy -y
+    apt install haproxy -yq
     haproxy_config_file
     systemctl restart haproxy
 fi
