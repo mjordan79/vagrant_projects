@@ -31,8 +31,8 @@ chmod +x /usr/bin/neofetch
 grep -qxF 'neofetch --ascii_distro Ubuntu' $HOME/.bash_profile || echo 'neofetch --ascii_distro Ubuntu' >> $HOME/.bash_profile
 grep -qxF 'neofetch --ascii_distro Ubuntu' /home/vagrant/.bash_profile || echo 'neofetch --ascii_distro Ubuntu' >> /home/vagrant/.bash_profile
 systemctl disable --now ufw
-grep -qxF 'alias ls="ls --color"' $HOME/.bashrc || echo 'neofetch --ascii_distro Ubuntu' >> $HOME/.bashrc
-grep -qxF 'alias ls="ls --color"' /home/vagrant/.bashrc || echo 'neofetch --ascii_distro Ubuntu' >> /home/vagrant/.bashrc
+grep -qxF 'alias ls="ls --color"' $HOME/.bashrc || echo 'alias ls="ls --color"' >> $HOME/.bashrc
+grep -qxF 'alias ls="ls --color"' /home/vagrant/.bashrc || echo 'alias ls="ls --color"' >> /home/vagrant/.bashrc
 grep -qxF 'source ./.bashrc' $HOME/.bash_profile || echo 'source ./.bashrc' >> $HOME/.bash_profile
 echo "Disabling SELinux ..."
 setenforce 0
