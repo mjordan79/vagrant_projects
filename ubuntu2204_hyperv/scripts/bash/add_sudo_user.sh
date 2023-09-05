@@ -18,4 +18,6 @@ echo "root:$ROOT_PASS" | chpasswd
 FILE=/etc/skel/.zshrc
 if [ -f "$FILE" ]; then
     chsh -s /bin/zsh $USER
+else
+    chsh -s /bin/bash $USER
 fi
