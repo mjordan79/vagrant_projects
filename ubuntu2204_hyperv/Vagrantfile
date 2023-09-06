@@ -113,7 +113,7 @@ Vagrant.configure(2) do |config|
 				elsif enable_kubernetes == true &&  (i == 2 || i == 3 || i == 4) 
 					hyperv.cpus = 4
 					hyperv.memory = 2048
-				elsif enable_kubernetes = true && i > 4
+				elsif enable_kubernetes == true && i > 4
 					hyperv.cpus = cpus_per_node
 					hyperv.memory = mem_per_node
 				else 
