@@ -97,7 +97,7 @@ Vagrant.configure(2) do |config|
 	    	node.vm.box = "generic/ubuntu2204"
 			if enable_kubernetes == true && i == 1
 				node.vm.hostname = "#{machine_name_prefix}-lb"
-			elsif enable_kubernetes == true && i == 2 || i == 3 || i == 4 
+			elsif enable_kubernetes == true && (i == 2 || i == 3 || i == 4) 
 				node.vm.hostname = "#{machine_name_prefix}-master#{i - 1}"
 			elsif enable_kubernetes == true && i > 4
 	    	    node.vm.hostname = "#{machine_name_prefix}-worker#{i - 4}"
@@ -110,7 +110,7 @@ Vagrant.configure(2) do |config|
 				if enable_kubernetes == true && i == 1
 					hyperv.cpus = 3
 					hyperv.memory = 1024
-				elsif enable_kubernetes == true &&  i == 2 || i == 3 || i == 4 
+				elsif enable_kubernetes == true &&  (i == 2 || i == 3 || i == 4) 
 					hyperv.cpus = 4
 					hyperv.memory = 2048
 				elsif enable_kubernetes = true && i > 4
