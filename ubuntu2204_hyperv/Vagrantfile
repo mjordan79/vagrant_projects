@@ -54,7 +54,7 @@ Vagrant.configure(2) do |config|
 	root_password = "vagrant"
 	update_distro = true
 	enable_zsh = false
-	enable_docker = false
+	enable_docker = true
 	# enable_kubernetes = true subdivides the total number of nodes in 3 control plane nodes and 1 load balancer node. The remaining nodes
 	# are worker nodes. So if you choose, for example, number_of_nodes = 6, it will create 1 load balancer with 1GB of RAM,
 	# 3 control plane nodes and 2 worker nodes. Make sure number_of_nodes in this case is always bigger than 4. Memory and CPUs for 
