@@ -63,7 +63,7 @@ Vagrant.configure(2) do |config|
 	# while it will be installed Kubernetes through MicroK8s / snapd on the other nodes. 
 	# If enable_kubernetes = false, the nodes will be created all equal following the specs given with the cpus_per_node and mem_per_node parameters.
 	enable_kubernetes = true
-	kubernetes_version = '1.30'
+	kubernetes_version = '1.32'
 	enable_java = false
 	enable_gitea = false
 	enable_nfs = false
