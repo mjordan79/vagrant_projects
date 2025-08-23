@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Renato Perini</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background-color: #f2f2f2;
+            font-family: Arial, sans-serif;
+        }
+        header {
+            padding: 10px;
+            text-align: center;
+            background-color: #f2f2f2; /* Colore di sfondo */
+            font-family: Arial, sans-serif; /* Font familiare */
+        }
+        h1 {
+            color: #333; /* Colore del testo */
+            text-align: center; /* Allineamento al centro */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Effetto ombreggiatura */
+            font-size: 3em; /* Dimensione del testo */
+        }
+        h2 {
+            color: #666; /* Colore del testo */
+            text-align: center; /* Allineamento al centro */
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5); /* Effetto ombreggiatura */
+            font-size: 1.5em; /* Dimensione del testo */
+        }
+        ul {
+            list-style-type: none; /* Rimuove i puntini */
+            padding: 0; /* Rimuove lo spazio intorno all'elemento */
+            text-align: center; /* Allineamento al centro */
+            display: flex; /* Aggiunge la funzionalità di flexbox */
+            flex-wrap: wrap; /* Permette di avvolgere gli elementi su più righe */
+        }
+        li {
+            width: 20%;
+            flex: 1 1 50%; /* Assegna la metà della larghezza disponibile */
+            display: inline-block; /* Elementi in linea */
+            margin: 0 10px; /* Spaziatura tra gli elementi */
+            padding: 5px; /* Spaziatura interna */
+            background-color: #ddd; /* Colore di sfondo */
+            border-radius: 15px; /* Rounded corners */
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25); /* Effetto ombreggiatura */
+            transition: all 0.3s ease; /* Effetto di transizione su tutti gli attributi */
+            width: 20%; /* Larghezza fissa */
+        }
+        li:hover {
+            background-color: #bbb; /* Colore di sfondo durante l'hover */
+            transform: scale(1.1); /* Ridimensionamento */
+            box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5); /* Effetto ombreggiatura durante l'hover */
+        }
+        @media screen and (max-width: 600px) {
+            ul {
+                flex-direction: column; /* Rende le colonne verticali */
+                align-items: center; /* Centra verticalmente gli elementi */
+            }
+            li {
+                flex: 1 1 100%; /* Rendi ciascun elemento una riga */
+                width: 100%; /* Larghezza fissa */
+            }
+        }
+        footer {
+            background-color: #f2f2f2;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
+    <title>title</title>
+</head>
+<body>  
+    <header>
+        <h1 style="transform-style: preserve-3d;
+                   perspective: 1000px;
+                   animation: spin 10s infinite linear;">
+            Renato Perini
+        </h1>
+
+        <style>
+            @keyframes spin {
+              from {
+                transform: rotateY(0deg);
+              }
+              to {
+                transform: rotateY(360deg);
+              }
+            }
+        </style>
+    </header>
+
+    <main>
+        <h2>Ruolo: Product Architect / Delivery Master</h2>
+        <h2>Azienda: Objectway SpA</h2>
+        <h2>Skills:</h2>
+        <ul>
+            <li>DevOps avanzato</li>
+            <li>Cloud computing</li>
+            <li>Sistemi distribuite</li>
+            <li>Containerization</li>
+            <li>Kubernetes</li>
+            <li>Docker</li>
+            <li>Infrastrutture PaaS</li>
+            <li>Infrastrutture IaaS</li>
+            <li>Monitoraggio e gestione sistemi</li>
+            <li>Analisi e sviluppo di soluzioni cloud native</li>
+            <li>Automazione del deploy</li>
+            <li>Sicurezza informatica</li>
+            <li>Testing continuo</li>
+            <li>Metodologie Agile</li>
+        </ul>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="script.js"></script>
+    <canvas id="cubo" width="400" height="400" style="display: block; margin: 0 auto; background-color: white;"></canvas>
+    <script>
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(75, 400 / 400, 0.1, 1000);
+      var renderer = new THREE.WebGLRenderer({canvas: document.getElementById('cubo')});
+      renderer.setClearColor(0x676666);
+      var geometry = new THREE.BoxGeometry(3, 3, 3);
+      function randomColor() {
+        return '#' + Math.floor(Math.random()*16777215).toString(16);
+      }
+      var colors = [randomColor(), randomColor(), randomColor(), randomColor(), randomColor(), randomColor()];
+      var materialArray = colors.map(function(color) {
+        return new THREE.MeshBasicMaterial({color: color});
+      });
+      var geometry = new THREE.BoxGeometry(3, 3, 3);
+      var cube = new THREE.Mesh(geometry, materialArray);
+      scene.add(cube);
+      camera.position.z = 10;
+      camera.position.z = 5;
+      function animate() {
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+        cube.rotation.z += 0.01;
+        renderer.render(scene, camera);
+      }
+      animate();
+      setInterval(function() {
+        colors = colors.map(function(color) {
+          return randomColor();
+        });
+        materialArray = colors.map(function(color) {
+          return new THREE.MeshBasicMaterial({color: color});
+        });
+        cube.material = materialArray;
+      }, 5000);
+      // FPS counter
+      var fpsDom = document.createElement('div');
+      fpsDom.style.position = 'absolute';
+      fpsDom.style.top = 0;
+      fpsDom.style.right = 0;
+      fpsDom.style.padding = '5px';
+      fpsDom.style.background = 'rgba(0, 0, 0, 0.5)';
+      fpsDom.style.color = '#fff';
+      document.body.appendChild(fpsDom);
+      var lastTime = performance.now();
+      var frames = 0;
+      function updateFPSCounter() {
+        var time = performance.now();
+        var delta = time - lastTime;
+        if (delta > 1000) {
+          fpsDom.innerText = (frames * 1000 / delta).toFixed(1) + ' FPS';
+          frames = 0;
+          lastTime = time;
+        }
+        frames++;
+        requestAnimationFrame(updateFPSCounter);
+      }
+      updateFPSCounter();
+    </script>
+    
+    <footer>
+        <p>Copyright(C) 2024 Renato Perini</p>
+    </footer>
+    
+</body>
+</html>
