@@ -60,9 +60,9 @@ backend kubernetes-apiserver-backend
     mode tcp
     option tcp-check
     balance roundrobin
-    server kmaster1 192.169.0.22:16443 check fall 3 rise 2
-    server kmaster2 192.169.0.23:16443 check fall 3 rise 2
-    server kmaster3 192.169.0.24:16443 check fall 3 rise 2
+    server kmaster1 node-master1:16443 check fall 3 rise 2
+    server kmaster2 node-master2:16443 check fall 3 rise 2
+    server kmaster3 node-master3:16443 check fall 3 rise 2
 EOF
 }
 
