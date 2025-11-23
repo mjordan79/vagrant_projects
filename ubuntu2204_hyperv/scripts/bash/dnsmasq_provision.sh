@@ -51,24 +51,8 @@ port=55
 EOF
 }
 
-# Only for the first node.
-networkd_split_dns_1() {
-    cat << EOF > /etc/systemd/network/10-eth0.network
-[Match]
-Name=eth0
-
-[Network]
-Address=192.169.0.$((21 + NO_NODE - 1))/24
-Gateway=192.169.0.1
-DNS=${BASE_IP}21:55
-
-# ~ = conditional routing, don't add suffixes but enables split dns.
-Domains=~${MACHINE_INTERNAL_DOMAIN}
-EOF
-}
-
-# Only for the nodes > 1. The split DNS points to the first node, where there is dnsmasq
-networkd_split_dns_others() {
+# Local (eth0) DNS resolution, points to the dnsmasq DNS server.
+networkd_split_dns() {
     cat << EOF > /etc/systemd/network/10-eth0.network
 [Match]
 Name=eth0
@@ -104,7 +88,7 @@ then
     # Create some configuration files and override some configs.
     dnsmasq_hosts_file
     dnsmasq_config_file
-    networkd_split_dns_1
+    networkd_split_dns
     resolved_override_config
     # Adjust the /etc/resolv.conf for pointing to the systemd-resolved stub
     rm -f /etc/resolv.conf
@@ -127,7 +111,7 @@ else
     echo "Not on the first node: just overriding systemd-resolved and configuring split DNS on systemd-networkd"
     systemctl stop systemd-resolved
     systemctl stop systemd-networkd
-    networkd_split_dns_others
+    networkd_split_dns
     resolved_override_config
     # Adjust the /etc/resolv.conf for pointing to the systemd-resolved stub
     rm -f /etc/resolv.conf
