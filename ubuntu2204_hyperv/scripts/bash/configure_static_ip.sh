@@ -18,8 +18,6 @@ network:
       routes:
       - to: default
         via: 192.169.0.1
-      nameservers:
-        addresses: [8.8.8.8,8.8.4.4]
 EOF
 
 # Find the UUID of the network interface with: nmcli connection show eth0 | grep connection.uuid

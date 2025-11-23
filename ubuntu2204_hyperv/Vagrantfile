@@ -45,14 +45,15 @@ SCRIPT
 Vagrant.configure(2) do |config| 
 	
 	# Config parameters for the environments
-	number_of_nodes = 6
+	number_of_nodes = 2
 	cpus_per_node = 16
 	mem_per_node = 4192
 	machine_name_prefix = "node"
+	machine_internal_domain = "vmstar.lan"
 	regular_user = "user"
 	regular_password = "user"
 	root_password = "vagrant"
-	update_distro = true
+	update_distro = true # Putting this to false might lead to faster provisioning but it can lead to possible errors.
 	enable_zsh = false
 	enable_docker = false
 	# enable_kubernetes = true subdivides the total number of nodes in 3 control plane nodes and 1 load balancer node. The remaining nodes
@@ -62,7 +63,7 @@ Vagrant.configure(2) do |config|
 	# are associated with mem_per_node amount and cpus_per_node. The load balancer node will install (and configure) an HAProxy instance 
 	# while it will be installed Kubernetes through MicroK8s / snapd on the other nodes. 
 	# If enable_kubernetes = false, the nodes will be created all equal following the specs given with the cpus_per_node and mem_per_node parameters.
-	enable_kubernetes = true
+	enable_kubernetes = false
 	kubernetes_version = '1.32'
 	enable_java = false
 	enable_gitea = false
@@ -91,19 +92,24 @@ Vagrant.configure(2) do |config|
 		}
 	end
 
+    # Compute the hostnames names.
+    hostnames = (1..number_of_nodes).map do |i|
+      if enable_kubernetes == true && i == 1
+        "#{machine_name_prefix}-lb"
+      elsif enable_kubernetes == true && (i == 2 || i == 3 || i == 4)
+        "#{machine_name_prefix}-master#{i - 1}"
+      elsif enable_kubernetes == true && i > 4
+        "#{machine_name_prefix}-worker#{i - 4}"
+      else
+        "#{machine_name_prefix}-#{i}"
+      end
+    end
+
 	# Provision the nodes.
 	(1..number_of_nodes).each do |i|
         config.vm.define "#{machine_name_prefix}-#{i}", primary: true do |node|
 	    	node.vm.box = "generic/ubuntu2204"
-			if enable_kubernetes == true && i == 1
-				node.vm.hostname = "#{machine_name_prefix}-lb"
-			elsif enable_kubernetes == true && (i == 2 || i == 3 || i == 4) 
-				node.vm.hostname = "#{machine_name_prefix}-master#{i - 1}"
-			elsif enable_kubernetes == true && i > 4
-	    	    node.vm.hostname = "#{machine_name_prefix}-worker#{i - 4}"
-			else
-				node.vm.hostname = "#{machine_name_prefix}-#{i}"
-			end
+            node.vm.hostname = "#{hostnames[i - 1]}.#{machine_internal_domain}"
 	    	node.vm.provider "hyperv" do |hyperv|
 	    		hyperv.enable_virtualization_extensions = true
         		hyperv.linked_clone = true
@@ -166,11 +172,9 @@ Vagrant.configure(2) do |config|
 	    	# Reload the machine.
 	    	node.vm.provision :reload
             
-			# Provision dnsmasq server in the first node
-			if i == 1
-			   node.vm.provision "shell", path: "./scripts/bash/dnsmasq_provision.sh" do |s|
-                    s.args = ["#{i}"]
-			   end
+			# Provision dnsmasq server in the first node and configure split dns on the others
+			node.vm.provision "shell", path: "./scripts/bash/dnsmasq_provision.sh" do |s|
+                s.args = ["#{i}", hostnames.join(","), "#{machine_internal_domain}"]
 			end
 
 			# Provision HAProxy in the first node if enable_kubernetes is enabled.
