@@ -25,10 +25,19 @@ dnsmasq_config_file () {
     echo "Writing config file in /etc/dnsmasq.d/dnsmasq.conf ..."
     mkdir -p /etc/dnsmasq.d
     cat << EOF > /etc/dnsmasq.d/dnsmasq.conf
-listen-address=127.0.0.1
-domain=${MACHINE_INTERNAL_DOMAIN}
+listen-address=${BASE_IP}21
+bind-interfaces
 expand-hosts
 no-resolv
+log-queries
+
+# Authoritative for ${MACHINE_INTERNAL_DOMAIN}
+domain=${MACHINE_INTERNAL_DOMAIN}
+auth-server=${MACHINE_INTERNAL_DOMAIN}
+auth-zone=${MACHINE_INTERNAL_DOMAIN}
+local=/${MACHINE_INTERNAL_DOMAIN}/
+mx-host=${MACHINE_INTERNAL_DOMAIN},mail.${MACHINE_INTERNAL_DOMAIN},10
+txt-record=${MACHINE_INTERNAL_DOMAIN},"internal dns zone"
 
 # Don't handle DHCP requests
 no-dhcp-interface=eth0
@@ -51,8 +60,9 @@ Name=eth0
 [Network]
 Address=192.169.0.$((21 + NO_NODE - 1))/24
 Gateway=192.169.0.1
-DNS=127.0.0.1:55
+DNS=${BASE_IP}21:55
 
+# ~ = conditional routing, don't add suffixes but enables split dns.
 Domains=~${MACHINE_INTERNAL_DOMAIN}
 EOF
 }
@@ -68,17 +78,21 @@ Address=192.169.0.$((21 + NO_NODE - 1))/24
 Gateway=192.169.0.1
 DNS=${BASE_IP}21:55
 
+# ~ = conditional routing, don't add suffixes but enables split dns.
 Domains=~${MACHINE_INTERNAL_DOMAIN}
 EOF
 }
 
-resolved_override() {
+resolved_override_config() {
     mkdir -p /etc/systemd/resolved.conf.d
     cat << EOF > /etc/systemd/resolved.conf.d/cluster.conf
 [Resolve]
 DNS=1.1.1.1
 FallbackDNS=1.0.0.1
-Domains=~${MACHINE_INTERNAL_DOMAIN}
+
+# Search domain (without ~).
+# If FQDN, resolution is first tried with DNS. If resolution fails, it will be expanded with .${MACHINE_INTERNAL_DOMAIN}
+Domains=${MACHINE_INTERNAL_DOMAIN}
 EOF
 }
 
@@ -91,10 +105,11 @@ then
     dnsmasq_hosts_file
     dnsmasq_config_file
     networkd_split_dns_1
-    resolved_override
+    resolved_override_config
     # Adjust the /etc/resolv.conf for pointing to the systemd-resolved stub
     rm -f /etc/resolv.conf
     ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+    systemctl daemon-reload
     systemctl restart systemd-networkd
     systemctl start systemd-resolved
     # Install dnsmasq
@@ -103,27 +118,24 @@ then
     # Restart the dns world
     systemctl restart systemd-networkd
     systemctl start systemd-resolved
+    systemctl enable dnsmasq
     systemctl start dnsmasq
-    # Make sure everything is clean
-    resolvectl flush-caches
-    resolvectl reset-server-features
-    sleep 2
     # Print the configuration
+    systemctl restart systemd-resolved
     resolvectl status
 else
     echo "Not on the first node: just overriding systemd-resolved and configuring split DNS on systemd-networkd"
-    #systemctl stop resolved
+    systemctl stop systemd-resolved
+    systemctl stop systemd-networkd
     networkd_split_dns_others
-    resolved_override
+    resolved_override_config
     # Adjust the /etc/resolv.conf for pointing to the systemd-resolved stub
     rm -f /etc/resolv.conf
     ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
-    systemctl restart systemd-networkd
+    systemctl daemon-reload
+    systemctl start systemd-networkd
     systemctl start systemd-resolved
-    # Make sure everything is clean
-    resolvectl flush-caches
-    resolvectl reset-server-features
-    sleep 2
     # Print the configuration
+    systemctl restart systemd-resolved
     resolvectl status
 fi
