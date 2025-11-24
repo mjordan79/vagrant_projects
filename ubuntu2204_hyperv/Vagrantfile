@@ -109,7 +109,7 @@ Vagrant.configure(2) do |config|
 
 	# Provision the nodes.
 	(1..number_of_nodes).each do |i|
-        #config.vm.network "public_network", bridge: "Default Switch"
+        config.vm.network "public_network", bridge: "LabSwitch"
         config.vm.define "#{machine_name_prefix}-#{i}", primary: true do |node|
 	    	node.vm.box = "generic/ubuntu2204"
             node.vm.hostname = "#{hostnames[i - 1]}.#{machine_internal_domain}"
@@ -134,13 +134,17 @@ Vagrant.configure(2) do |config|
 	    	end
                     
 	    	# Define a reload trigger.
-	    	node.trigger.before :reload do |trigger|
-	    		trigger.info = "Setting Hyper-V switch to 'LabSwitch' to allow for static IP..."
-	    		trigger.run = {
-	    			privileged: "true", powershell_elevated_interactive: "true", path: "./scripts/powershell/set-hyperv-switch.ps1", args: "#{machine_name_prefix}-#{i}"
-	    		}
-	    	end
-    
+	    	#node.trigger.before :reload do |trigger|
+	    	#	trigger.info = "Setting Hyper-V switch to 'LabSwitch' to allow for static IP..."
+	    	#	trigger.run = {
+	    	#		privileged: "true", powershell_elevated_interactive: "true", path: "./scripts/powershell/set-hyperv-switch.ps1", args: "#{machine_name_prefix}-#{i}"
+	    	#	}
+	    	#end
+
+            # Configure Network with a static IP.
+            node.vm.provision "shell", path: "./scripts/bash/network_setup.sh" do |s|
+                s.args = "#{i}"
+            end
 			# Update the distro
             node.vm.provision "shell", path: "./scripts/bash/update_distro.sh" do |s|
 			    s.args = "#{update_distro}"
@@ -161,10 +165,11 @@ Vagrant.configure(2) do |config|
 	    	node.vm.provision "shell", path: "./scripts/bash/add_sudo_user.sh" do |s|
 	    		s.args = ["#{regular_user}", "#{regular_password}", "#{root_password}"]
 	    	end
+
 			# And we have to work with static IPs. We don't need IPV6.
-	    	node.vm.provision "shell", path: "./scripts/bash/configure_static_ip.sh" do |s|
-	        	s.args = "#{i}"
-	    	end
+	    	#node.vm.provision "shell", path: "./scripts/bash/configure_static_ip.sh" do |s|
+	        #	s.args = "#{i}"
+	    	#end
 
 			# Write the IPS into the /etc/hosts file. Still not the static IP but we need the entry to add the localhost alias in the next sed command.
 			node.vm.provision :hostmanager, run: 'always'
