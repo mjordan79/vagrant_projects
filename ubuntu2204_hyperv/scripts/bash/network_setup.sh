@@ -17,6 +17,9 @@ if [ -f "$NETPLAN_FILE" ]; then
     echo "[INFO] Backup created in ${NETPLAN_FILE}.bak"
 fi
 
+# We clean the /etc/hosts.
+cat /dev/null > /etc/hosts
+
 # Write the new configuration
 cat << EOF > "$NETPLAN_FILE"
 network:

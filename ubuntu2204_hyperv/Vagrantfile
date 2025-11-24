@@ -18,7 +18,7 @@
 
 # Maintainer: Renato Perini <renato.perini@gmail.com>
 
-Vagrant.require_version ">= 2.4.1"
+Vagrant.require_version ">= 2.4.9"
 
 # Provisioning stuff we don't want to put in other script files.
 $script = <<-SCRIPT
@@ -75,7 +75,8 @@ Vagrant.configure(2) do |config|
 	smb_pass = ""
 	
 	# Require some plugins.
-	config.vagrant.plugins = ["vagrant-hostmanager","vagrant-reload"]
+	#config.vagrant.plugins = ["vagrant-hostmanager","vagrant-reload"]
+	config.vagrant.plugins = ["vagrant-reload"]
 
 	# Enable /etc/hosts handling automatically.
 	if Vagrant.has_plugin?("vagrant-hostmanager")
@@ -172,13 +173,13 @@ Vagrant.configure(2) do |config|
 	    	#end
 
 			# Write the IPS into the /etc/hosts file. Still not the static IP but we need the entry to add the localhost alias in the next sed command.
-			node.vm.provision :hostmanager, run: 'always'
+			#node.vm.provision :hostmanager, run: 'always'
 
 			# Include the alias 127.0.0.1 to localhost in /etc/hosts file.
 			node.vm.provision :shell, run: 'always', privileged: 'true', inline: "sed -i '1s/.*/127.0.0.1 localhost/' /etc/hosts"
 				    			
 	    	# Reload the machine.
-	    	node.vm.provision :reload
+	    	#node.vm.provision :reload
             
 			# Provision dnsmasq server in the first node and configure split dns on the others
 			node.vm.provision "shell", path: "./scripts/bash/dnsmasq_provision.sh" do |s|
@@ -215,7 +216,7 @@ Vagrant.configure(2) do |config|
 			end
 
 			# Just configure the IPs
-			node.vm.provision :hostmanager, run: 'always'
+			#node.vm.provision :hostmanager, run: 'always'
 			
 			# Provision the Gitea Git Server
 			if enable_gitea == true then
