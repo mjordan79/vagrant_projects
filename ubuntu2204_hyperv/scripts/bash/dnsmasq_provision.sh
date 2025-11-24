@@ -68,6 +68,12 @@ EOF
 }
 
 resolved_override_config() {
+    # First, reset the DNS and FallbackDNS in /etc/systemd/resolved.conf
+    #sed -i 's/^DNS=.*/DNS=8.8.8.8/g' /etc/systemd/resolved.conf
+    #sed -i 's/^FallbackDNS=.*/FallbackDNS=8.8.4.4/g' /etc/systemd/resolved.conf
+    sed -i 's/^DNS=.*/DNS=/g' /etc/systemd/resolved.conf
+    sed -i 's/^FallbackDNS=.*/FallbackDNS=/g' /etc/systemd/resolved.conf
+    # Then we create an ovverride
     mkdir -p /etc/systemd/resolved.conf.d
     cat << EOF > /etc/systemd/resolved.conf.d/cluster.conf
 [Resolve]
