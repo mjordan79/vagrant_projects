@@ -16,7 +16,7 @@ microk8s_system_info() {
 microk8s_install () {
     # Ensure the localhost alias is present in /etc/hosts
     sed -i '1s/.*/127.0.0.1 localhost/' /etc/hosts
-    snap install microk8s --classic --channel=$1/stable
+    snap refresh && snap install microk8s --classic --channel=$1/stable
 }
 
 microk8s_certs () {
