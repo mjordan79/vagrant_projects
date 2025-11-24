@@ -176,7 +176,7 @@ Vagrant.configure(2) do |config|
 			#node.vm.provision :hostmanager, run: 'always'
 
 			# Include the alias 127.0.0.1 to localhost in /etc/hosts file.
-			node.vm.provision :shell, run: 'always', privileged: 'true', inline: "sed -i '1s/.*/127.0.0.1 localhost/' /etc/hosts"
+			#node.vm.provision :shell, run: 'always', privileged: 'true', inline: "sed -i '1s/.*/127.0.0.1 localhost/' /etc/hosts"
 				    			
 	    	# Reload the machine.
 	    	#node.vm.provision :reload
