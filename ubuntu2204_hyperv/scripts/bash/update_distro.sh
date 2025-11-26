@@ -2,6 +2,7 @@
 set -euo pipefail
 
 UPDATE_DISTRO=$1
+RELEASE=$(lsb_release -rs)
 
 log() {
     echo -e "[INFO] $*"
@@ -11,6 +12,20 @@ error() {
     echo -e "[ERROR] $*" >&2
     exit 1
 }
+
+reset_repositories() {
+  if [[ "$RELEASE" == "22.04" ]]; then
+    log "Restoring official Ubuntu repositories ..."
+    cat << EOF > /etc/apt/sources.list
+deb http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu jammy-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
+EOF
+  fi
+}
+
+reset_repositories
 
 if [[ "$UPDATE_DISTRO" == "release" ]] || [[ "$UPDATE_DISTRO" == "full" ]]; then
     if [[ "$UPDATE_DISTRO" == "release" ]]; then
