@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # Ideas stolen from: https://dev.to/andrenbrandao/terminal-setup-with-zsh-tmux-dracula-theme-48lm
 
@@ -121,10 +122,9 @@ source $ZSH/oh-my-zsh.sh
 EOF
 
 # Setup Zsh + Oh my Zsh + Powerlevel10k + Dracula theme with auto-suggestions and syntax-higlighting
-echo "Installing ZSH and making it the default shell ..."
+echo "[INFO] Installing ZSH and making it the default shell ..."
 dnf install -yq zsh util-linux-user powerline-fonts 
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
 
 # Install some oh-my-zsh plugins / themes including PowerLevel10k
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $ZSH_CUSTOM/themes/powerlevel10k

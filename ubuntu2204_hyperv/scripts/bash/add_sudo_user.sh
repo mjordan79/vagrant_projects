@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 USER=$1
 PASS=$2
 ROOT_PASS=$3
-echo "Creating user $USER with password $PASS and adding it to the sudoers list ..."
+echo "[INFO] Creating user $USER with password $PASS and adding it to the sudoers list ..."
 useradd -m -p $(openssl passwd -1 $PASS) $USER
 
 # If creating the new user went well, we do accessory operations. Otherwise we assume the user already exists and we don't need to do anything.
 if [ $? -eq 0 ]
 then
     grep -qxF '$USER ALL=(ALL:ALL) ALL' /etc/sudoers || echo "$USER ALL=(ALL:ALL) ALL" >> /etc/sudoers
-    touch /home/$USER/.bash_profile
-    grep -qxF 'neofetch --ascii_distro Ubuntu' /home/$USER/.bash_profile || echo 'neofetch --ascii_distro Ubuntu' >> /home/$USER/.bash_profile
+    #touch /home/$USER/.bashrc
+    #grep -qxF 'neofetch --ascii_distro Ubuntu' /home/$USER/.bash_profile || echo 'neofetch --ascii_distro Ubuntu' >> /home/$USER/.bash_profile
     groupadd -f docker
     usermod -aG docker $USER
 

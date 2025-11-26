@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 NO_NODE=$1
 DOMAINS_LIST=$2
@@ -14,7 +15,7 @@ dnsmasq_hosts_file () {
     touch /etc/dnsmasq.hosts
 
     # Loop on hostnames
-    echo "Writing hosts file in /etc/dnsmasq.hosts ..."
+    echo "[INFO] Writing hosts file in /etc/dnsmasq.hosts ..."
     for idx in "${!HOST_ARRAY[@]}"; do
       ip_suffix=$((21 + idx))   # computing the IP number
       echo "${BASE_IP}${ip_suffix} ${HOST_ARRAY[$idx]}" >> /etc/dnsmasq.hosts
@@ -22,7 +23,7 @@ dnsmasq_hosts_file () {
 }
 
 dnsmasq_config_file () {
-    echo "Writing config file in /etc/dnsmasq.d/dnsmasq.conf ..."
+    echo "[INFO] Writing config file in /etc/dnsmasq.d/dnsmasq.conf ..."
     mkdir -p /etc/dnsmasq.d
     cat << EOF > /etc/dnsmasq.d/dnsmasq.conf
 listen-address=${BASE_IP}21
@@ -88,8 +89,8 @@ EOF
 
 if [ "$NO_NODE" -eq 1 ] 
 then
-    echo "We're on the first node: provisioning dnsmasq, overriding systemd-resolved and configuring split DNS on systemd-networkd"
-    apt download dnsmasq
+    echo "[INFO] We're on the first node: provisioning dnsmasq, overriding systemd-resolved and configuring split DNS on systemd-networkd"
+    apt-get download dnsmasq
     systemctl stop systemd-resolved
     # Create some configuration files and override some configs.
     dnsmasq_hosts_file
@@ -108,13 +109,12 @@ then
     # Restart the dns world
     systemctl restart systemd-networkd
     systemctl start systemd-resolved
-    systemctl enable dnsmasq
-    systemctl start dnsmasq
+    systemctl enable dnsmasq --now
     # Print the configuration
     systemctl restart systemd-resolved
     resolvectl status
 else
-    echo "Not on the first node: just overriding systemd-resolved and configuring split DNS on systemd-networkd"
+    echo "[INFO] Not on the first node: just overriding systemd-resolved and configuring split DNS on systemd-networkd"
     systemctl stop systemd-resolved
     systemctl stop systemd-networkd
     networkd_split_dns
@@ -123,8 +123,8 @@ else
     rm -f /etc/resolv.conf
     ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
     systemctl daemon-reload
-    systemctl start systemd-networkd
-    systemctl start systemd-resolved
+    systemctl enable systemd-networkd --now
+    systemctl enable systemd-resolved --now
     # Print the configuration
     systemctl restart systemd-resolved
     resolvectl status

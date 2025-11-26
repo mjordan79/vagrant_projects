@@ -1,11 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 NO_NODE=$1
 ENABLE_KUBERNETES=$2
 IP_ADDRESS=$(hostname -i)
 
 haproxy_config_file () {
-    echo "Writing config file in /etc/haproxy ..."
+    echo "[INFO] Writing config file in /etc/haproxy ..."
     mkdir -p /etc/haproxy
     cat << EOF > /etc/haproxy/haproxy.cfg
 global
@@ -66,11 +67,12 @@ backend kubernetes-apiserver-backend
 EOF
 }
 
-echo "Provisioning HAProxy because enable_kubernetes = true and we're on the first node"
+echo "[INFO] Provisioning HAProxy because enable_kubernetes = true and we're on the first node"
 
-if [ "$ENABLE_KUBERNETES" = "true" -a "$NO_NODE" -eq 1 ] 
+if [ "$ENABLE_KUBERNETES" = "true" ] && [ "$NO_NODE" -eq 1 ]
 then 
-    apt install haproxy -yq
+    apt-get install -yq haproxy
+    apt-get enable haproxy --now
     haproxy_config_file
     systemctl restart haproxy
 fi

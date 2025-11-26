@@ -4,45 +4,15 @@
 # Creates an environment with a variable number of nodes, each visible in the private subnetwork.
 # Node 1 is supposed to be the master, the others are the workers.
 # All the nodes are based on Ubuntu 22.04 LTS and the Hyper-V hypervisor.
-# Requires the vagrant-hostmanager plugin:
-# 	Install globally with: vagrant plugin install vagrant-hostmanager beforehand.
-
 # For a static IP on Hyper-V, we also need to create an ad-hoc hyper-v virtual switch.
 # Please read the Powershell script in ./scripts/create-nat-hyperv-switch.ps1
 # Requires the vagrant-reload plugin:
 #   Install globally with: vagrant plugin install vagrant-reload
 # Otherwise it will be installed locally each time you create the environments.
-# 
-# IMPORTANT: When asked, choose the Default Switch as the network adapter. It will be switched automatically
-# to LabSwitch after the first boot.
 
 # Maintainer: Renato Perini <renato.perini@gmail.com>
 
 Vagrant.require_version ">= 2.4.9"
-
-# Provisioning stuff we don't want to put in other script files.
-$script = <<-SCRIPT
-#!/usr/bin/env bash
-
-echo "Updating neofetch ..."
-curl -s https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch -o /usr/bin/neofetch
-chmod +x /usr/bin/neofetch
-
-grep -qxF 'neofetch --ascii_distro Ubuntu' $HOME/.bashrc || echo 'neofetch --ascii_distro Ubuntu' >> $HOME/.bashrc
-grep -qxF 'neofetch --ascii_distro Ubuntu' /home/vagrant/.bashrc || echo 'neofetch --ascii_distro Ubuntu' >> /home/vagrant/.bashrc
-
-systemctl disable --now ufw
-
-grep -qxF 'alias ls="ls --color"' $HOME/.bashrc || echo 'alias ls="ls --color"' >> $HOME/.bashrc
-grep -qxF 'alias ls="ls --color"' /home/vagrant/.bashrc || echo 'alias ls="ls --color"' >> /home/vagrant/.bashrc
-
-echo "Disabling SELinux ..."
-setenforce 0
-sed -i --follow-symlinks 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
-echo "Disabling AppArmor ..."
-systemctl stop apparmor && systemctl disable apparmor
-
-SCRIPT
 
 Vagrant.configure(2) do |config| 
 	
@@ -55,7 +25,7 @@ Vagrant.configure(2) do |config|
 	regular_user = "user"
 	regular_password = "user"
 	root_password = "vagrant"
-	update_distro = "disabled" # full = apt full upgrade, upgrade = apt upgrade, disabled = apt update
+	update_distro = "disabled" # release = do-release-upgrade, full = apt full upgrade, upgrade = apt upgrade, disabled = apt update
 	enable_zsh = false
 	enable_docker = false
 	# enable_kubernetes = true subdivides the total number of nodes in 3 control plane nodes and 1 load balancer node. The remaining nodes
@@ -68,6 +38,8 @@ Vagrant.configure(2) do |config|
 	enable_kubernetes = false
 	kubernetes_version = '1.32'
 	enable_java = false
+	java_versions = ["21", "25"]
+	java_flavors = ["jdk", "graalvm"] # jdk for eclipse temurin, graalvm for official graalvm. You can choose both.
 	enable_gitea = false
 	enable_nfs = false
 	enable_synced_folder = false
@@ -75,7 +47,6 @@ Vagrant.configure(2) do |config|
 	smb_pass = ""
 	
 	# Require some plugins.
-	#config.vagrant.plugins = ["vagrant-hostmanager","vagrant-reload"]
 	config.vagrant.plugins = ["vagrant-reload"]
 
 	# Enable /etc/hosts handling automatically.
@@ -95,7 +66,7 @@ Vagrant.configure(2) do |config|
 		}
 	end
 
-    # Compute the hostnames names.
+    # Compute the hostnames.
     hostnames = (1..number_of_nodes).map do |i|
       if enable_kubernetes == true && i == 1
         "#{machine_name_prefix}-lb"
@@ -133,55 +104,52 @@ Vagrant.configure(2) do |config|
 				hyperv.vmname = "#{machine_name_prefix}-#{i}"
 				hyperv.maxmemory = nil
 	    	end
-                    
-	    	# Define a reload trigger.
-	    	#node.trigger.before :reload do |trigger|
-	    	#	trigger.info = "Setting Hyper-V switch to 'LabSwitch' to allow for static IP..."
-	    	#	trigger.run = {
-	    	#		privileged: "true", powershell_elevated_interactive: "true", path: "./scripts/powershell/set-hyperv-switch.ps1", args: "#{machine_name_prefix}-#{i}"
-	    	#	}
-	    	#end
 
             # Configure Network with a static IP.
             node.vm.provision "shell", path: "./scripts/bash/network_setup.sh" do |s|
                 s.args = "#{i}"
             end
+
 			# Update the distro
             node.vm.provision "shell", path: "./scripts/bash/update_distro.sh" do |s|
 			    s.args = "#{update_distro}"
 			end
+            if update_distro == "release"
+                node.vm.provision "reload"
+                node.vm.provision "shell", path: "./scripts/bash/release_upgrade_distro.sh" do |s|
+                    s.args = "#{update_distro}"
+                end
+                node.vm.provision "reload"
+                # Provisioner finale di pulizia
+                node.vm.provision "shell", inline: <<-SHELL
+                    set -euo pipefail
+                    echo "[INFO] Cleanup after release upgrade..."
+                    apt-get autoremove --purge -qq -y && apt-get autoclean -qq -y && apt-get clean -qq -y
+                SHELL
+            end
+
 	    	# Install basic software.
 			node.vm.provision "shell", path: "./scripts/bash/basic_software_provision.sh"
+
 			# Install Docker
 			if enable_docker == true then
 	    		node.vm.provision "shell", path: "./scripts/bash/docker_provision.sh"
 			end
+
 			# Install ZSH, Oh-My-ZSH, Powerline10k, Dracula Theme for tmux
 			if enable_zsh == true then
 				node.vm.provision "shell", path: "./scripts/bash/zsh_provision.sh"
 			end
+
             # Mixed actions, mostly unrelated to each other.
-	    	node.vm.provision "shell", inline: $script
+			node.vm.provision "shell", path: "./scripts/bash/misc_provision.sh"
+
 			# We want a normal user. With Bash or ZSH if available.
 	    	node.vm.provision "shell", path: "./scripts/bash/add_sudo_user.sh" do |s|
 	    		s.args = ["#{regular_user}", "#{regular_password}", "#{root_password}"]
 	    	end
-
-			# And we have to work with static IPs. We don't need IPV6.
-	    	#node.vm.provision "shell", path: "./scripts/bash/configure_static_ip.sh" do |s|
-	        #	s.args = "#{i}"
-	    	#end
-
-			# Write the IPS into the /etc/hosts file. Still not the static IP but we need the entry to add the localhost alias in the next sed command.
-			#node.vm.provision :hostmanager, run: 'always'
-
-			# Include the alias 127.0.0.1 to localhost in /etc/hosts file.
-			#node.vm.provision :shell, run: 'always', privileged: 'true', inline: "sed -i '1s/.*/127.0.0.1 localhost/' /etc/hosts"
-				    			
-	    	# Reload the machine.
-	    	#node.vm.provision :reload
             
-			# Provision dnsmasq server in the first node and configure split dns on the others
+			# Provision dnsmasq server in the first node and configure split dns on systemd-resolved on the others
 			node.vm.provision "shell", path: "./scripts/bash/dnsmasq_provision.sh" do |s|
                 s.args = ["#{i}", hostnames.join(","), "#{machine_internal_domain}"]
 			end
@@ -215,9 +183,6 @@ Vagrant.configure(2) do |config|
 				end
 			end
 
-			# Just configure the IPs
-			#node.vm.provision :hostmanager, run: 'always'
-			
 			# Provision the Gitea Git Server
 			if enable_gitea == true then
 				node.vm.provision "shell", path: "./scripts/bash/gitea_provision.sh" do |s|

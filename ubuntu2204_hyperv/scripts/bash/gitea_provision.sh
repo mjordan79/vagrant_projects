@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 NO_NODE=$1
 
 if [ "$NO_NODE" -eq 1 ]
 then 
-    echo "Provisioning Gitea 1.17.0 ..."
+    echo "[INFO] Provisioning Gitea 1.17.0 ..."
     wget -O gitea https://dl.gitea.io/gitea/1.17.0/gitea-1.17.0-linux-amd64
     chmod +x gitea
     # Installing MySQL ...
@@ -121,5 +122,5 @@ EOF
         mysql -e "GRANT ALL PRIVILEGES ON ${MAINDB}.* TO '${MAINDB}'@'localhost';"
         mysql -e "FLUSH PRIVILEGES;"
 else
-    echo "Not on the first node. No need to provision anything..."
+    echo "[INFO] Not on the first node. No need to provision anything..."
 fi
