@@ -24,3 +24,7 @@ systemctl disable apparmor --now
 
 echo "[INFO] Disabling the Uncomplicated Firewall (ufw) ..."
 systemctl disable ufw --now
+
+echo "[INFO] Deleting garbage ..."
+rm -f /root/truncate
+

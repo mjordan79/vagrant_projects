@@ -27,7 +27,7 @@ dnsmasq_config_file () {
     mkdir -p /etc/dnsmasq.d
     cat << EOF > /etc/dnsmasq.d/dnsmasq.conf
 listen-address=${BASE_IP}21
-bind-interfaces
+bind-dynamic
 expand-hosts
 no-resolv
 log-queries
@@ -90,7 +90,7 @@ EOF
 if [ "$NO_NODE" -eq 1 ] 
 then
     echo "[INFO] We're on the first node: provisioning dnsmasq, overriding systemd-resolved and configuring split DNS on systemd-networkd"
-    apt-get download dnsmasq
+    #apt-get download dnsmasq
     systemctl stop systemd-resolved
     # Create some configuration files and override some configs.
     dnsmasq_hosts_file
@@ -104,8 +104,9 @@ then
     systemctl restart systemd-networkd
     systemctl start systemd-resolved
     # Install dnsmasq
-    dpkg --force-confold -i /home/vagrant/$(ls -t *.deb | head -n 1)
-    rm -f /home/vagrant/$(ls -t *.deb | head -n 1)
+    apt-get install -qq -y dnsmasq
+    #dpkg --force-confold -i /home/vagrant/$(ls -t *.deb | head -n 1)
+    #rm -f /home/vagrant/$(ls -t *.deb | head -n 1)
     # Restart the dns world
     systemctl restart systemd-networkd
     systemctl start systemd-resolved
