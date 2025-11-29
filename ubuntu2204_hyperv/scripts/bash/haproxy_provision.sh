@@ -69,10 +69,9 @@ EOF
 
 echo "[INFO] Provisioning HAProxy because enable_kubernetes = true and we're on the first node"
 
-if [ "$ENABLE_KUBERNETES" = "true" ] && [ "$NO_NODE" -eq 1 ]
-then 
-    apt-get install -yq haproxy
-    apt-get enable haproxy --now
+if [[ "$ENABLE_KUBERNETES" == "true" ]] && [[ "$NO_NODE" -eq 1 ]]; then
+    apt-get install -qq -y haproxy
+    systemctl enable haproxy --now
     haproxy_config_file
     systemctl restart haproxy
 fi

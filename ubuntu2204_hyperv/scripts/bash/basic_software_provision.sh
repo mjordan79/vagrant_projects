@@ -6,3 +6,4 @@ apt-get update -qq -y && apt-get install -qq -y net-tools policycoreutils policy
     localectl set-locale LANG=it_IT.UTF-8 && \
     sed -i 's/^XKBLAYOUT=.*/XKBLAYOUT="it"/' /etc/default/keyboard && \
     setupcon && apt-get autoclean -qq -y && apt-get autoremove -qq -y
+
