@@ -27,4 +27,3 @@ systemctl disable ufw --now
 
 echo "[INFO] Deleting garbage ..."
 rm -f /root/truncate
-

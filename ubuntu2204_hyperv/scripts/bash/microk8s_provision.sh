@@ -1,23 +1,21 @@
 #!/usr/bin/env bash
-set -euo pipefail
+#set -euo pipefail
 
 # Provision a Kubernetes node through MicroK8S and Snapd.
 # Maintainer: Renato Perini <renato.perini@gmail.com>
 
 NO_NODE=$1
 KUBERNETES_VERSION=$2
+ENABLE_RANCHER2_NODE=$3
 
 microk8s_system_info() {
-    echo "[INFO] DNS configured for the machine:"
-    resolvectl status
     echo "[INFO] Content of the /etc/hosts file:"
     cat /etc/hosts
 }
 
 microk8s_install () {
-    #echo "[INFO] Ensure the localhost alias is present in /etc/hosts ..."
-    #sed -i '1s/.*/127.0.0.1 localhost/' /etc/hosts
-    snap refresh && snap install microk8s --classic --channel=$1/stable
+    echo "[INFO] Installing MicroK8s $1/stable ..."
+    snap install microk8s --classic --channel=$1/stable
 }
 
 microk8s_certs () {
@@ -38,16 +36,22 @@ microk8s_iprange () {
 echo "[INFO] MicroK8S: Provisioning MicroK8S v$KUBERNETES_VERSION ..."
 microk8s_system_info
 microk8s_install $KUBERNETES_VERSION
-
-# Waiting for ready state.
-microk8s status -w
-
-if [ "$NO_NODE" -eq 2 ] || [ "$NO_NODE" -eq 3 ] || [ "$NO_NODE" -eq 4 ]
-then 
+microk8s status --wait-ready
+if [[ "$ENABLE_RANCHER2_NODE" == "false" ]]; then
+  if [[ "$NO_NODE" -eq 2 ]] || [[ "$NO_NODE" -eq 3 ]] || [[ "$NO_NODE" -eq 4 ]]; then
     echo "[INFO] MicroK8S: on a Control Plane node. Configuring certs for v.$KUBERNETES_VERSION ..."
     microk8s_certs
     microk8s_refresh_interval
+  fi
+else
+  if [[ "$NO_NODE" -eq 3 ]] || [[ "$NO_NODE" -eq 4 ]] || [[ "$NO_NODE" -eq 5 ]]; then
+    echo "[INFO] MicroK8S: on a Control Plane node. Configuring certs for v.$KUBERNETES_VERSION ..."
+    microk8s_certs
+    microk8s_refresh_interval
+  fi
 fi
 
 microk8s_iprange
-microk8s stop && microk8s start && microk8s status -w
+microk8s stop
+microk8s start
+microk8s status --wait-ready

@@ -117,14 +117,14 @@ then
 else
     echo "[INFO] Not on the first node: just overriding systemd-resolved and configuring split DNS on systemd-networkd"
     systemctl stop systemd-resolved
-    systemctl stop systemd-networkd
+    systemctl stop systemd-networkd.socket systemd-networkd
     networkd_split_dns
     resolved_override_config
     # Adjust the /etc/resolv.conf for pointing to the systemd-resolved stub
     rm -f /etc/resolv.conf
     ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
     systemctl daemon-reload
-    systemctl enable systemd-networkd --now
+    systemctl enable systemd-networkd.socket systemd-networkd --now
     systemctl enable systemd-resolved --now
     # Print the configuration
     systemctl restart systemd-resolved

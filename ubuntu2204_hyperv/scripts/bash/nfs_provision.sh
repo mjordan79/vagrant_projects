@@ -7,6 +7,7 @@ set -euo pipefail
 # Look at the script: bash/network_setup.sh for how IPs are assigned.
 NO_NODE=$1
 ENABLE_KUBERNETES=$2
+ENABLE_RANCHER2_NODE=$3
 IP_ADDRESS=$(hostname -i)
 
 nfs_install_server() {
@@ -52,7 +53,7 @@ if [[ "$ENABLE_KUBERNETES" == "false" ]]; then
       # Specify the NFS Server IP for the NFS client.
       nfs_install_client 192.169.0.21
   fi
-else
+elif [[ "$ENABLE_KUBERNETES" == "true" ]] && [[ "$ENABLE_RANCHER2_NODE" == "false" ]]; then
   if [[ "$NO_NODE" -eq 1 ]]; then
     skip_installation
   elif [[ "$NO_NODE" -eq 2 ]]; then
@@ -60,5 +61,14 @@ else
   else
     # Specify the NFS Server IP for the NFS client.
     nfs_install_client 192.169.0.22
+  fi
+elif [[ "$ENABLE_KUBERNETES" == "true" ]] && [[ "$ENABLE_RANCHER2_NODE" == "true" ]]; then
+  if [[ "$NO_NODE" -eq 1 || "$NO_NODE" -eq 2 ]]; then
+    skip_installation
+  elif [[ "$NO_NODE" -eq 3 ]]; then
+    nfs_install_server
+  else
+    # Specify the NFS Server IP for the NFS client.
+    nfs_install_client 192.169.0.23
   fi
 fi
