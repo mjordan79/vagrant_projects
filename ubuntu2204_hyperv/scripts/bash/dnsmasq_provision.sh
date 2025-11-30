@@ -14,7 +14,7 @@ dnsmasq_hosts_file () {
     # Creating / rewriting the dnsmasq.hosts file
     touch /etc/dnsmasq.hosts
 
-    # Loop on hostnames
+    # Loop on hostnames and write them in /etc/dnsmasq.hosts
     echo "[INFO] Writing hosts file in /etc/dnsmasq.hosts ..."
     for idx in "${!HOST_ARRAY[@]}"; do
       ip_suffix=$((21 + idx))   # computing the IP number
