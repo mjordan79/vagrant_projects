@@ -4,22 +4,40 @@ set -euo pipefail
 NO_NODE=$1
 DOMAINS_LIST=$2
 MACHINE_INTERNAL_DOMAIN=$3
+ENABLE_RANCHER2_NODE=$4
+EXTRA_HOSTS=$5
 
 # Remember, our IPs always start from *.21 for the first environment
 BASE_IP="192.169.0."
 
 dnsmasq_hosts_file () {
-    IFS=',' read -r -a HOST_ARRAY <<< "$DOMAINS_LIST"
+    # Start fresh. If the file exists, delete it.
+    if [ -f "/etc/dnsmasq.hosts" ]; then
+      echo "[INFO] File /etc/dnsmasq.hosts already exist. Deleting it and start fresh ..."
+      rm -f "/etc/dnsmasq.hosts"
+    fi
 
     # Creating / rewriting the dnsmasq.hosts file
     touch /etc/dnsmasq.hosts
 
+    IFS=',' read -r -a EXTRA_ARRAY <<< "$EXTRA_HOSTS"
     # Loop on hostnames and write them in /etc/dnsmasq.hosts
+    # extra hosts are always the first entry and always associated to 192.169.0.11
+    echo "[INFO] Writing extra hosts in /etc/dnsmasq.hosts ..."
+    echo 192.169.0.11 "${EXTRA_ARRAY[*]}" >> /etc/dnsmasq.hosts
+
+    IFS=',' read -r -a HOST_ARRAY <<< "$DOMAINS_LIST"
     echo "[INFO] Writing hosts file in /etc/dnsmasq.hosts ..."
     for idx in "${!HOST_ARRAY[@]}"; do
       ip_suffix=$((21 + idx))   # computing the IP number
       echo "${BASE_IP}${ip_suffix} ${HOST_ARRAY[$idx]}" >> /etc/dnsmasq.hosts
     done
+
+    if [[ "$ENABLE_RANCHER2_NODE" == "true" ]]; then
+      # Add the entry rancher2 to the dnsmasq.hosts file
+      echo "[INFO] Writing rancher2 entry in /etc/dnsmasq.hosts ..."
+      sed -i '/node-rancher/s/$/ rancher2/' /etc/dnsmasq.hosts
+    fi
 }
 
 dnsmasq_config_file () {

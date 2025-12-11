@@ -40,6 +40,7 @@ Vagrant.configure(2) do |config|
 	# An additional rancher node is created as the second VM. In this node it is not necessary to provision metallb.
 	# This node will be added to the dnsmasq DNS server with the name rancher2
 	enable_rancher2_node = true
+	extra_hosts = ["argocd", "nginx-ingress", "nginx-gateway"]
 	# Working with snap in scripts is a pain. So we don't bother restarting things. If you have problems, enable a final reboot.
 	enable_final_reboot = false
 	enable_nfs = true
@@ -197,7 +198,7 @@ Vagrant.configure(2) do |config|
             
 			# Provision dnsmasq server in the first node and configure split dns on systemd-resolved on the others
 			node.vm.provision "shell", path: "./scripts/bash/dnsmasq_provision.sh" do |s|
-                s.args = ["#{i}", hostnames.join(","), "#{machine_internal_domain}"]
+                s.args = ["#{i}", hostnames.join(","), "#{machine_internal_domain}", "#{enable_rancher2_node}", "#{extra_hosts.join(",")}"]
 			end
 
 			# Provision HAProxy in the first node if enable_kubernetes is enabled.
