@@ -17,7 +17,7 @@ Vagrant.require_version ">= 2.4.9"
 Vagrant.configure(2) do |config| 
 	
 	# Config parameters for the environments
-	number_of_nodes = 7
+	number_of_nodes = 6
 	cpus_per_node = 16
 	mem_per_node = 4192
 	machine_name_prefix = "node"
@@ -39,7 +39,7 @@ Vagrant.configure(2) do |config|
 	kubernetes_version = '1.32'
 	# An additional rancher node is created as the second VM. In this node it is not necessary to provision metallb.
 	# This node will be added to the dnsmasq DNS server with the name rancher2
-	enable_rancher2_node = true
+	enable_rancher2_node = false
 	extra_hosts = ["argocd", "nginx-ingress", "nginx-gateway"]
 	# Working with snap in scripts is a pain. So we don't bother restarting things. If you have problems, enable a final reboot.
 	enable_final_reboot = false
@@ -79,65 +79,83 @@ Vagrant.configure(2) do |config|
 
     # Compute the hostnames.
     hostnames = (1..number_of_nodes).map do |i|
-      if enable_kubernetes
-        if i == 1
-          "#{machine_name_prefix}-lb"
-
-        elsif enable_rancher2_node && i == 2
-          # Inserisci Rancher come secondo nodo
-          "#{machine_name_prefix}-rancher"
-
-        elsif enable_rancher2_node && (i >= 3 && i <= 5)
-          # Master slittano di uno
-          "#{machine_name_prefix}-master#{i - 2}"
-
-        elsif !enable_rancher2_node && (i >= 2 && i <= 4)
-          # Master normali senza Rancher
-          "#{machine_name_prefix}-master#{i - 1}"
-
-        elsif enable_rancher2_node && i > 5
-          # Worker slittano di uno
-          "#{machine_name_prefix}-worker#{i - 5}"
-
-        elsif !enable_rancher2_node && i > 4
-          # Worker normali
-          "#{machine_name_prefix}-worker#{i - 4}"
-
-        else
-          "#{machine_name_prefix}-#{i}"
+        # Simple case: Kubernetes is not activated
+        unless enable_kubernetes
+            next "#{machine_name_prefix}-#{i}"
         end
-      else
-        "#{machine_name_prefix}-#{i}"
-      end
+        # Kubernetes active -> two distinct scenarios
+        if enable_rancher2_node
+            case i
+            when 1
+                "#{machine_name_prefix}-lb"
+            when 2
+                "#{machine_name_prefix}-rancher"
+            when 3..5
+                "#{machine_name_prefix}-master#{i - 2}"
+            else
+                "#{machine_name_prefix}-worker#{i - 5}"
+            end
+        else
+            case i
+            when 1
+                "#{machine_name_prefix}-lb"
+            when 2..4
+                "#{machine_name_prefix}-master#{i - 1}"
+            else
+                "#{machine_name_prefix}-worker#{i - 4}"
+            end
+        end
     end
 
 	# Provision the nodes.
 	(1..number_of_nodes).each do |i|
-        config.vm.network "public_network", bridge: "LabSwitch"
-        config.vm.define "#{machine_name_prefix}-#{i}", primary: true do |node|
+        config.vm.define "#{machine_name_prefix}-#{i}", primary: (i == 1) do |node|
+            node.vm.network "public_network", bridge: "LabSwitch"
 	    	node.vm.box = "generic/ubuntu2204"
             node.vm.hostname = "#{hostnames[i - 1]}.#{machine_internal_domain}"
 	    	node.vm.provider "hyperv" do |hyperv|
 	    		hyperv.enable_virtualization_extensions = true
         		hyperv.linked_clone = true
-				if enable_kubernetes == true && i == 1
-					hyperv.cpus = 3
-					hyperv.memory = 1024
-				elsif enable_kubernetes == true && enable_rancher2_node == true && i == 2
-                    hyperv.cpus = 4
-                    hyperv.memory = 4096
-				elsif enable_kubernetes == true && enable_rancher2_node == false && (i == 2 || i == 3 || i == 4)
-					hyperv.cpus = 4
-					hyperv.memory = 2048
-				elsif enable_kubernetes == true && i > 4
-					hyperv.cpus = cpus_per_node
-					hyperv.memory = mem_per_node
-				else 
-					hyperv.cpus = cpus_per_node
-					hyperv.memory = mem_per_node
-				end
+                # LOGICA DI ASSEGNAZIONE CPU/RAM
+                if enable_kubernetes
+                    if enable_rancher2_node
+                        # Kubernetes + Rancher2
+                        case i
+                        when 1
+                            hyperv.cpus   = 3
+                            hyperv.memory = 1024
+                        when 2
+                            hyperv.cpus   = 4
+                            hyperv.memory = 4096
+                        when 3, 4, 5
+                            hyperv.cpus   = 4
+                            hyperv.memory = 2048
+                        else
+                            hyperv.cpus   = cpus_per_node
+                            hyperv.memory = mem_per_node
+                        end
+                    else
+                        # Solo Kubernetes
+                        case i
+                        when 1
+                            hyperv.cpus   = 3
+                            hyperv.memory = 1024
+                        when 2, 3, 4
+                            hyperv.cpus   = 4
+                            hyperv.memory = 2048
+                        else
+                            hyperv.cpus   = cpus_per_node
+                            hyperv.memory = mem_per_node
+                        end
+                    end
+                else
+                    # Kubernetes disattivato → tutto default
+                    hyperv.cpus   = cpus_per_node
+                    hyperv.memory = mem_per_node
+                end
+
 				hyperv.vmname = "#{machine_name_prefix}-#{i}"
-				hyperv.maxmemory = nil
+				hyperv.maxmemory = 0
 	    	end
 
             # Configure Network with a static IP.

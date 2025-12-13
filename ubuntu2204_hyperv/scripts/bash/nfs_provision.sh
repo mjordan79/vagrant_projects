@@ -41,7 +41,7 @@ nfs_install_client () {
 }
 
 skip_installation () {
-    echo "[INFO] Skipping node, we're on the load balancer ...".
+    echo "[INFO] Skipping node, we're on the load balancer or on the Rancher 2 node ...".
     return 0
 }
 
