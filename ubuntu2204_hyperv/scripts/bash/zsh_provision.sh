@@ -3,6 +3,10 @@ set -euo pipefail
 
 # Ideas stolen from: https://dev.to/andrenbrandao/terminal-setup-with-zsh-tmux-dracula-theme-48lm
 
+log() {
+    echo -e "\e[32m[INFO]\e[0m $*"
+}
+
 # We define some variables
 export ZSH=/opt/oh-my-zsh
 export ZSH_CUSTOM=$ZSH/custom
@@ -122,7 +126,7 @@ source $ZSH/oh-my-zsh.sh
 EOF
 
 # Setup Zsh + Oh my Zsh + Powerlevel10k + Dracula theme with auto-suggestions and syntax-higlighting
-echo "[INFO] Installing ZSH and making it the default shell ..."
+log "Installing ZSH and making it the default shell ..."
 dnf install -yq zsh util-linux-user powerline-fonts 
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 

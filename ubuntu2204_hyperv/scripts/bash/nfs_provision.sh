@@ -10,8 +10,13 @@ ENABLE_KUBERNETES=$2
 ENABLE_RANCHER2_NODE=$3
 IP_ADDRESS=$(hostname -i)
 
+# User messages are green.
+log() {
+    echo -e "\e[32m[INFO]\e[0m $*"
+}
+
 nfs_install_server() {
-    echo "[INFO] I'm on the first node... Configuring the NFS server ..."
+    log "I'm on the first node... Configuring the NFS server ..."
     apt-get install -qq -y nfs-kernel-server
     mkdir -p /nfs/data
     mkdir -p /nfs/logs
@@ -26,7 +31,7 @@ nfs_install_server() {
 
 # Be aware: here $1 is not the global parameter but the parameter passed to the function.
 nfs_install_client () {
-    echo "[INFO] I'm on node $IP_ADDRESS ... Configuring NFS client ..."
+    log "I'm on node $IP_ADDRESS ... Configuring NFS client ..."
     apt-get install -qq -y nfs-common
     showmount -e $1
     mkdir -p /mnt/nfs/data
@@ -41,11 +46,11 @@ nfs_install_client () {
 }
 
 skip_installation () {
-    echo "[INFO] Skipping node, we're on the load balancer or on the Rancher 2 node ...".
+    log "Skipping node, we're on the load balancer or on the Rancher 2 node ...".
     return 0
 }
 
-echo "[INFO] NFS Provisioning ..."
+log "NFS Provisioning ..."
 if [[ "$ENABLE_KUBERNETES" == "false" ]]; then
   if  [[ "$NO_NODE" -eq 1 ]]; then
       nfs_install_server

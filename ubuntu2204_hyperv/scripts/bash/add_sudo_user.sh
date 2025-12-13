@@ -5,12 +5,17 @@ USER=$1
 PASS=$2
 ROOT_PASS=$3
 
+# User messages are green.
+log() {
+    echo -e "\e[32m[INFO]\e[0m $*"
+}
+
 #useradd -m -p $(openssl passwd -1 $PASS) $USER
 if id "$USER" &>/dev/null; then
-    echo "[INFO] User $USER already exists, updating password ..."
+    log "User $USER already exists, updating password ..."
     echo "$USER:$(openssl passwd -1 "$PASS")" | sudo chpasswd -e
 else
-    echo "[INFO] Creating user $USER with password $PASS and adding it to the sudoers list ..."
+    log "Creating user $USER with password $PASS and adding it to the sudoers list ..."
     sudo useradd -m -p "$(openssl passwd -1 "$PASS")" "$USER"
 fi
 

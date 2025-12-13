@@ -5,12 +5,7 @@ UPDATE_DISTRO=$1
 RELEASE=$(lsb_release -rs)
 
 log() {
-    echo -e "[INFO] $*"
-}
-
-error() {
-    echo -e "[ERROR] $*" >&2
-    exit 1
+    echo -e "\e[32m[INFO]\e[0m $*"
 }
 
 reset_repositories() {

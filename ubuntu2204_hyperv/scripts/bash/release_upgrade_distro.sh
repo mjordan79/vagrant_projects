@@ -4,11 +4,11 @@ set -euo pipefail
 UPDATE_DISTRO=$1
 
 log() {
-    echo -e "[INFO] $*"
+    echo -e "\e[32m[INFO]\e[0m $*"
 }
 
 skip() {
-    echo -e "[SKIP] $*" >&2
+    echo -e "\e[33m[SKIP]\e[0m $*" >&2
     exit 0
 }
 

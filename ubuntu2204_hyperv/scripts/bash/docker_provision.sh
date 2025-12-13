@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# User messages are green.
+log() {
+    echo -e "\e[32m[INFO]\e[0m $*"
+}
+
 # Provision Docker CE Stable on the Vagrant VM plus updates packages. 
-echo "[INFO] Attempting to provision Docker and accessory software ...";
+log "Attempting to provision Docker and accessory software ...";
 
 # First, cleanup eventual incompatible packages that might be already installed.
 for pkg in docker.io docker-doc docker-compose podman-docker containerd runc 
@@ -28,5 +33,5 @@ apt-get update -yq && apt-get install -yq docker-ce docker-ce-cli containerd.io 
     systemctl enable --now docker && \
     docker version
 
-echo "[INFO] Installing Docker Bash completion ..."
+log "Installing Docker Bash completion ..."
 curl https://raw.githubusercontent.com/docker/cli/master/contrib/completion/bash/docker -o /etc/bash_completion.d/docker.sh

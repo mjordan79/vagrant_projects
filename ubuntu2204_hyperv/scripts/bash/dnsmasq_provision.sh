@@ -7,13 +7,18 @@ MACHINE_INTERNAL_DOMAIN=$3
 ENABLE_RANCHER2_NODE=$4
 EXTRA_HOSTS=$5
 
+# User messages are green.
+log() {
+    echo -e "\e[32m[INFO]\e[0m $*"
+}
+
 # Remember, our IPs always start from *.21 for the first environment
 BASE_IP="192.169.0."
 
 dnsmasq_hosts_file () {
     # Start fresh. If the file exists, delete it.
     if [ -f "/etc/dnsmasq.hosts" ]; then
-      echo "[INFO] File /etc/dnsmasq.hosts already exist. Deleting it and start fresh ..."
+      log "File /etc/dnsmasq.hosts already exist. Deleting it and start fresh ..."
       rm -f "/etc/dnsmasq.hosts"
     fi
 
@@ -23,11 +28,11 @@ dnsmasq_hosts_file () {
     IFS=',' read -r -a EXTRA_ARRAY <<< "$EXTRA_HOSTS"
     # Loop on hostnames and write them in /etc/dnsmasq.hosts
     # extra hosts are always the first entry and always associated to 192.169.0.11
-    echo "[INFO] Writing extra hosts in /etc/dnsmasq.hosts ..."
+    log "Writing extra hosts in /etc/dnsmasq.hosts ..."
     echo 192.169.0.11 "${EXTRA_ARRAY[*]}" >> /etc/dnsmasq.hosts
 
     IFS=',' read -r -a HOST_ARRAY <<< "$DOMAINS_LIST"
-    echo "[INFO] Writing hosts file in /etc/dnsmasq.hosts ..."
+    log "Writing hosts file in /etc/dnsmasq.hosts ..."
     for idx in "${!HOST_ARRAY[@]}"; do
       ip_suffix=$((21 + idx))   # computing the IP number
       echo "${BASE_IP}${ip_suffix} ${HOST_ARRAY[$idx]}" >> /etc/dnsmasq.hosts
@@ -35,13 +40,13 @@ dnsmasq_hosts_file () {
 
     if [[ "$ENABLE_RANCHER2_NODE" == "true" ]]; then
       # Add the entry rancher2 to the dnsmasq.hosts file
-      echo "[INFO] Writing rancher2 entry in /etc/dnsmasq.hosts ..."
+      log "Writing rancher2 entry in /etc/dnsmasq.hosts ..."
       sed -i '/node-rancher/s/$/ rancher2/' /etc/dnsmasq.hosts
     fi
 }
 
 dnsmasq_config_file () {
-    echo "[INFO] Writing config file in /etc/dnsmasq.d/dnsmasq.conf ..."
+    log "Writing config file in /etc/dnsmasq.d/dnsmasq.conf ..."
     mkdir -p /etc/dnsmasq.d
     cat << EOF > /etc/dnsmasq.d/dnsmasq.conf
 listen-address=${BASE_IP}21
@@ -107,7 +112,7 @@ EOF
 
 if [ "$NO_NODE" -eq 1 ] 
 then
-    echo "[INFO] We're on the first node: provisioning dnsmasq, overriding systemd-resolved and configuring split DNS on systemd-networkd"
+    log "We're on the first node: provisioning dnsmasq, overriding systemd-resolved and configuring split DNS on systemd-networkd"
     #apt-get download dnsmasq
     systemctl stop systemd-resolved
     # Create some configuration files and override some configs.
@@ -133,7 +138,7 @@ then
     systemctl restart systemd-resolved
     resolvectl status
 else
-    echo "[INFO] Not on the first node: just overriding systemd-resolved and configuring split DNS on systemd-networkd"
+    log "Not on the first node: just overriding systemd-resolved and configuring split DNS on systemd-networkd"
     systemctl stop systemd-resolved
     systemctl stop systemd-networkd.socket systemd-networkd
     networkd_split_dns

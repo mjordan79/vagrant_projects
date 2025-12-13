@@ -5,8 +5,13 @@ NO_NODE=$1
 ENABLE_KUBERNETES=$2
 IP_ADDRESS=$(hostname -i)
 
+# User messages are green.
+log() {
+    echo -e "\e[32m[INFO]\e[0m $*"
+}
+
 haproxy_config_file () {
-    echo "[INFO] Writing config file in /etc/haproxy ..."
+    log "Writing config file in /etc/haproxy ..."
     mkdir -p /etc/haproxy
     cat << EOF > /etc/haproxy/haproxy.cfg
 global
@@ -67,7 +72,7 @@ backend kubernetes-apiserver-backend
 EOF
 }
 
-echo "[INFO] Provisioning HAProxy because enable_kubernetes = true and we're on the first node"
+log "Provisioning HAProxy because enable_kubernetes = true and we're on the first node"
 
 if [[ "$ENABLE_KUBERNETES" == "true" ]] && [[ "$NO_NODE" -eq 1 ]]; then
     apt-get install -qq -y haproxy

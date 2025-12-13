@@ -24,7 +24,7 @@
 # Get-VMSwitch
 
 If ("LabSwitch" -in (Get-VMSwitch | Select-Object -ExpandProperty Name) -eq $FALSE) {
-    'Creating Internal-only switch named "LabSwitch" on Windows Hyper-V host...'
+    Write-Host "`e[36mCreating Internal-only switch named 'LabSwitch' on Windows Hyper-V host...`e[0m"
 
     New-VMSwitch -SwitchName LabSwitch -SwitchType Internal
 
@@ -33,23 +33,23 @@ If ("LabSwitch" -in (Get-VMSwitch | Select-Object -ExpandProperty Name) -eq $FAL
     New-NetNAT -Name "LabNAT" -InternalIPInterfaceAddressPrefix 192.169.0.0/24
 }
 else {
-    '"LabSwitch" for static IP configuration already exists: skipping.'
+    Write-Host "`e[36m'LabSwitch' for static IP configuration already exists: skipping.`e[0m"
 }
 
 If ("192.169.0.1" -in (Get-NetIPAddress | Select-Object -ExpandProperty IPAddress) -eq $FALSE) {
-    'Registering new IP address 192.169.0.1 on Windows Hyper-V host...'
+    Write-Host "`e[36mRegistering new IP address 192.169.0.1 on Windows Hyper-V host...`e[0m"
 
     New-NetIPAddress -IPAddress 192.169.0.1 -PrefixLength 24 -InterfaceAlias "vEthernet (LabSwitch)"
 }
 else {
-    '"192.169.0.1" for static IP configuration already registered: skipping.'
+    Write-Host "`e[36m'192.169.0.1' for static IP configuration already registered: skipping.`e[0m"
 }
 
 If ("192.169.0.0/24" -in (Get-NetNAT | Select-Object -ExpandProperty InternalIPInterfaceAddressPrefix) -eq $FALSE) {
-    'Registering new NAT adapter for 192.169.0.0/24 on Windows Hyper-V host...'
+    Write-Host "`e[36mRegistering new NAT adapter for 192.169.0.0/24 on Windows Hyper-V host...`e[0m"
 
     New-NetNAT -Name LabNAT -InternalIPInterfaceAddressPrefix 192.169.0.0/24
 }
 else {
-    '"192.169.0.0/24" for static IP configuration already registered: skipping.'
+    Write-Host "`e[36m'192.169.0.0/24' for static IP configuration already registered: skipping.`e[0m"
 }
