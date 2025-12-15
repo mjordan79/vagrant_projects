@@ -1,0 +1,61 @@
+#cloud-config
+autoinstall:
+  version: 1
+
+  keyboard:
+    layout: it
+    variant: ""
+
+  locale: "it_IT.UTF-8"
+
+  identity:
+    hostname: ${hostname}
+    username: vagrant
+    password: ${vagrant_password_hash}
+    ssh:
+      ssh_authorized_keys:
+        - ${vagrant_ssh_public_key}
+
+  ssh:
+    install-server: true
+    allow-pw-login: true
+    permit-root-login: true
+    pwauth: true
+
+  storage:
+    layout:
+      name: direct
+
+  packages:
+    - qemu-guest-agent
+    - openssh-server
+    - linux-virtual
+    - linux-cloud-tools-virtual
+    - linux-tools-virtual
+
+  early-commands:
+    - ['systemctl', 'stop', 'ssh']
+    - ['curtin', 'in-target', '--', 'apt-get', 'update']
+    - ['curtin', 'in-target', '--', 'apt-get', '-y', 'full-upgrade']
+
+  late-commands:
+    - ['curtin', 'in-target', '--', 'apt-get', '-y', 'autoremove', '--purge']
+    - ['curtin', 'in-target', '--', 'apt-get', '-y', 'autoclean']
+    - ['curtin', 'in-target', '--', 'apt-get', '-y', 'clean']
+    - ['curtin', 'in-target', '--', 'rm', '-rf', '/var/lib/apt/lists/*']
+    - ['curtin', 'in-target', '--', 'rm', '-rf', '/var/cache/apt/archives/*.deb']
+    - ['curtin', 'in-target', '--', 'truncate', '-s', '0', '/etc/machine-id']
+    - ['curtin', 'in-target', '--', 'rm', '-f', '/var/lib/dbus/machine-id']
+
+write_files:
+  - path: /etc/sudoers.d/vagrant
+    permissions: "0440"
+    owner: root:root
+    content: |
+      vagrant ALL=(ALL) NOPASSWD:ALL
+
+runcmd:
+  - [ sh, -c, "mkdir -p /home/vagrant/.ssh" ]
+  - [ sh, -c, "chmod 700 /home/vagrant/.ssh" ]
+  - [ sh, -c, "chown -R vagrant:vagrant /home/vagrant/.ssh" ]
+  - [ sh, -c, "echo 'Vagrant base box ready' > /etc/motd" ]
