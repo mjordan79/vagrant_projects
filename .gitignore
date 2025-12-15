@@ -1,4 +1,10 @@
 ### Vagrant ###
 .vagrant/
 .idea/
-
+packer_cache/
+output-*
+local/
+venv/
+*.iso
+*.log
+*.box
