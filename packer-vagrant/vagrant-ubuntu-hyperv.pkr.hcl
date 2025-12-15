@@ -28,10 +28,16 @@ source "hyperv-iso" "ubuntu-2204" {
   switch_name        = "Default Switch"
   boot_wait          = "5s"
   boot_command = [
-  "c<wait>",
-  "linux /casper/vmlinuz quiet autoinstall ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ ---<enter><wait>",
-  "initrd /casper/initrd<enter><wait>",
-  "boot<enter>"
+  "<wait5>", // Aspetta che GRUB compaia
+  "e",       // Entra in modalità modifica (Edit) di GRUB
+  "<wait2>",
+  // Sposta il cursore fino alla fine della riga che inizia con 'linux'
+  "<down><wait><down><wait><down><wait><end><wait2>",
+  "<bs><wait><bs><wait><bs><wait><bs><wait2>",
+  // Aggiungi i parametri di autoinstall dopo '...' quiet splash ---'
+  " autoinstall 'ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/' ---",
+  "<wait10>",
+  "<f10>" // F10 per avviare il boot con i parametri modificati
 ]
   http_content = {
     "/user-data" = templatefile("templates/user-data.template", {
