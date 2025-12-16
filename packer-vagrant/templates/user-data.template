@@ -4,41 +4,43 @@ autoinstall:
 
   keyboard:
     layout: it
-    variant: ""
 
-  locale: "it_IT.UTF-8"
+  locale: it_IT.UTF-8
+  updates: all
+
+  source:
+    id: ubuntu-server-minimal
+
+  refresh-installer:
+    update: true
+    channel: lastest/stable
 
   identity:
     hostname: ${hostname}
     username: vagrant
     password: ${vagrant_password_hash}
-    ssh:
-      ssh_authorized_keys:
-        - ${vagrant_ssh_public_key}
 
   ssh:
     install-server: true
-    allow-pw-login: true
+    allow-pw: true
+    password-auth: true
+    authorized-keys:
+      - ${vagrant_ssh_public_key}
     permit-root-login: true
-    pwauth: true
-
+    
   storage:
     layout:
       name: direct
 
   packages:
-    - qemu-guest-agent
     - openssh-server
     - linux-virtual
     - linux-cloud-tools-virtual
     - linux-tools-virtual
 
-  early-commands:
-    - ['systemctl', 'stop', 'ssh']
+  late-commands:
     - ['curtin', 'in-target', '--', 'apt-get', 'update']
     - ['curtin', 'in-target', '--', 'apt-get', '-y', 'full-upgrade']
-
-  late-commands:
     - ['curtin', 'in-target', '--', 'apt-get', '-y', 'autoremove', '--purge']
     - ['curtin', 'in-target', '--', 'apt-get', '-y', 'autoclean']
     - ['curtin', 'in-target', '--', 'apt-get', '-y', 'clean']
@@ -55,7 +57,4 @@ write_files:
       vagrant ALL=(ALL) NOPASSWD:ALL
 
 runcmd:
-  - [ sh, -c, "mkdir -p /home/vagrant/.ssh" ]
-  - [ sh, -c, "chmod 700 /home/vagrant/.ssh" ]
-  - [ sh, -c, "chown -R vagrant:vagrant /home/vagrant/.ssh" ]
   - [ sh, -c, "echo 'Vagrant base box ready' > /etc/motd" ]

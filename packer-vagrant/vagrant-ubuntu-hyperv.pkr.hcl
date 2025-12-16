@@ -22,7 +22,7 @@ source "hyperv-iso" "ubuntu-2204" {
   vm_name            = "ubuntu-22.0.4"
   generation         = 2
   cpus               = 2
-  memory             = 1024
+  memory             = 4096
   disk_size          = 131072
   enable_secure_boot = false
   switch_name        = "Default Switch"
@@ -32,11 +32,11 @@ source "hyperv-iso" "ubuntu-2204" {
   "e",       // Entra in modalità modifica (Edit) di GRUB
   "<wait2>",
   // Sposta il cursore fino alla fine della riga che inizia con 'linux'
-  "<down><wait><down><wait><down><wait><end><wait2>",
-  "<bs><wait><bs><wait><bs><wait><bs><wait2>",
+  "<down><down><wait><down><end><wait>",
+  "<bs><bs><wait><bs><bs><wait2>",
   // Aggiungi i parametri di autoinstall dopo '...' quiet splash ---'
   " autoinstall 'ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/' ---",
-  "<wait10>",
+  "<wait5>",
   "<f10>" // F10 per avviare il boot con i parametri modificati
 ]
   http_content = {
