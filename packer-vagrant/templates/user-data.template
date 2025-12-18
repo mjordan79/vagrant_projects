@@ -4,57 +4,66 @@ autoinstall:
 
   keyboard:
     layout: it
-
   locale: it_IT.UTF-8
   updates: all
 
   source:
     id: ubuntu-server-minimal
 
-  refresh-installer:
-    update: true
-    channel: lastest/stable
-
+  # Identità dell'utente principale
   identity:
     hostname: ${hostname}
     username: vagrant
-    password: ${vagrant_password_hash}
+    password: "${vagrant_password_hash}"
 
+  # Configurazione SSH per l'accesso di Vagrant
   ssh:
     install-server: true
     allow-pw: true
     password-auth: true
     authorized-keys:
-      - ${vagrant_ssh_public_key}
-    permit-root-login: true
-    
+      - "${vagrant_ssh_public_key}"
+
   storage:
     layout:
       name: direct
 
+  # Sezione pacchetti (Spostata dentro autoinstall per evitare errori)
   packages:
     - openssh-server
     - linux-virtual
     - linux-cloud-tools-virtual
     - linux-tools-virtual
+    - sudo
 
+  # Configurazione cloud-init integrata
+  user-data:
+    disable_root: false
+
+  # Comandi eseguiti a fine installazione (Spostati dentro autoinstall)
   late-commands:
-    - ['curtin', 'in-target', '--', 'apt-get', 'update']
-    - ['curtin', 'in-target', '--', 'apt-get', '-y', 'full-upgrade']
-    - ['curtin', 'in-target', '--', 'apt-get', '-y', 'autoremove', '--purge']
-    - ['curtin', 'in-target', '--', 'apt-get', '-y', 'autoclean']
-    - ['curtin', 'in-target', '--', 'apt-get', '-y', 'clean']
-    - ['curtin', 'in-target', '--', 'rm', '-rf', '/var/lib/apt/lists/*']
-    - ['curtin', 'in-target', '--', 'rm', '-rf', '/var/cache/apt/archives/*.deb']
-    - ['curtin', 'in-target', '--', 'truncate', '-s', '0', '/etc/machine-id']
-    - ['curtin', 'in-target', '--', 'rm', '-f', '/var/lib/dbus/machine-id']
+    # 1. Imposta la stessa password di vagrant per l'utente root
+    - curtin in-target -- sh -c "echo 'root:${vagrant_password_hash}' | chpasswd -e"
+    # 2. Configura sudoers per l'utente vagrant (senza password)
+    - curtin in-target -- sh -c "echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant && chmod 0440 /etc/sudoers.d/vagrant"
+    # Disabilita UseDNS per velocizzare il login SSH
+    - curtin in-target -- sh -c "echo 'UseDNS no' >> /etc/ssh/sshd_config"
+    # (Opzionale) Un altro tweak utile per Vagrant è GSSAPIAuthentication
+    - curtin in-target -- sh -c "echo 'GSSAPIAuthentication no' >> /etc/ssh/sshd_config"
+    # Disabilita l'inoltro X11 per evitare l'errore .Xauthority
+    - curtin in-target -- sed -i 's/X11Forwarding yes/X11Forwarding no/' /etc/ssh/sshd_config
+    # 3. Aggiornamenti finali e pulizia profonda dell'immagine
+    - curtin in-target -- apt-get update
+    - curtin in-target -- apt-get -y full-upgrade
+    - curtin in-target -- apt-get -y autoremove --purge
+    - curtin in-target -- apt-get -y autoclean
+    - curtin in-target -- apt-get -y clean
+    - curtin in-target -- rm -rf /var/lib/apt/lists/*
+    - curtin in-target -- rm -rf /var/cache/apt/archives/*.deb
+    # 4. Reset ID macchina per evitare conflitti di rete nelle box clonate
+    - curtin in-target -- truncate -s 0 /etc/machine-id
+    - curtin in-target -- rm -f /var/lib/dbus/machine-id
 
-write_files:
-  - path: /etc/sudoers.d/vagrant
-    permissions: "0440"
-    owner: root:root
-    content: |
-      vagrant ALL=(ALL) NOPASSWD:ALL
-
-runcmd:
-  - [ sh, -c, "echo 'Vagrant base box ready' > /etc/motd" ]
+  # Messaggio di benvenuto al login
+  runcmd:
+    - [ sh, -c, "echo 'Vagrant base box ready' > /etc/motd" ]

@@ -1,3 +1,8 @@
+/**
+ * Builds an Ubuntu Server 22.04 LTS Hyper-V image specifically tailored for Vagrant.
+ * Copyright(C) 2025 Renato Perini.
+ * This work is licensed under the Creative Commons Attribution 4.0 International License.
+ */
 packer {
   required_plugins {
     hyperv = {
@@ -18,16 +23,17 @@ locals {
 }
 
 source "hyperv-iso" "ubuntu-server-2204" {
-  iso_url               = var.hyperv_iso_url
-  iso_checksum          = "sha256:9bc6028870aef3f74f4e16b900008179e78b130e6b0b9a140635434a46aa98b0"
-  vm_name               = "ubuntu-server-22.0.4"
-  generation            = 2
-  cpus                  = 8
-  memory                = 2048
-  disk_size             = 131072
-  enable_secure_boot    = false
-  switch_name           = "Default Switch"
-  boot_wait             = "3s"
+  iso_url                          = var.hyperv_iso_url
+  iso_checksum                     = "sha256:9bc6028870aef3f74f4e16b900008179e78b130e6b0b9a140635434a46aa98b0"
+  vm_name                          = "ubuntu-server-22.0.4"
+  generation                       = 2
+  cpus                             = 8
+  memory                           = 2048
+  disk_size                        = 131072
+  enable_secure_boot               = false
+  switch_name                      = "Default Switch"
+  enable_virtualization_extensions = true
+  boot_wait                        = "3s"
   boot_command = [
     "<wait2>", // Wait that GRUB menu appears
     "e",       // Enter GRUB edit mode
@@ -35,7 +41,7 @@ source "hyperv-iso" "ubuntu-server-2204" {
     "<down><down><wait><down><end><wait>",
     "<bs><bs><wait><bs><bs><wait>",
     // autoinstall configured with an http server for getting user-data and meta-data
-    "autoinstall 'ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/' ---",
+    "autoinstall noprompt 'ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/' ---",
     "<wait2>",
     "<f10>" // Boot the system
   ]
@@ -63,6 +69,10 @@ build {
   sources = [
     "source.hyperv-iso.ubuntu-server-2204"
   ]
+
+  provisioner "shell" {
+    script = "scripts/zeroing.sh"
+  }
 
   post-processor "vagrant" {
     architecture         = "amd64"
