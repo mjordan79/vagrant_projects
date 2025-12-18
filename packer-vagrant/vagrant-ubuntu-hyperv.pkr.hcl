@@ -30,7 +30,8 @@ source "hyperv-iso" "ubuntu-server-2204" {
   cpus                             = 8
   memory                           = 2048
   disk_size                        = 131072
-  enable_secure_boot               = false
+  enable_secure_boot               = true
+  secure_boot_template             = "MicrosoftUEFICertificateAuthority"
   switch_name                      = "Default Switch"
   enable_virtualization_extensions = true
   boot_wait                        = "3s"
