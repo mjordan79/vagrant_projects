@@ -5,7 +5,11 @@ Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu-server-2204-lts"
   config.ssh.insert_key = false
   config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.network "public_network", bridge: "Default Switch"
   config.vm.provider "hyperv" do |hyperv|
+    hyperv.vm_integration_services = {
+        "Guest Service Interface" => true
+    }
     hyperv.vmname = "ubuntu-server-2204-lts"
     hyperv.memory = 1024
     hyperv.cpus   = 1
