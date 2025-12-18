@@ -12,3 +12,13 @@ variable "vagrant_password_hash" {
   type    = string
   default = "$6$tEk1141N8WO7HAIF$HDYDDTtR/bOgAe6t0jdesH/BZB/IOLbEzYqfvKCsZxxsIALSsgGqrZXTSlXtqayJ.HX13rBRYxBzqWEV48Hpt0"
 }
+
+variable "shutdown_timeout" {
+  type    = string
+  default = "20s"
+}
+
+variable "box_name" {
+  type    = string
+  default = "ubuntu-server-2204-lts.box"
+}

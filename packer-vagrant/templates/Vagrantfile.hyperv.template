@@ -1,0 +1,10 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu-server-2204-lts"
+  config.vm.provider "hyperv" do |hyperv|
+    hyperv.memory = 1024
+    hyperv.cpus   = 1
+  end
+end
