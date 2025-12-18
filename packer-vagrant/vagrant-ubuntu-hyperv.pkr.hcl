@@ -52,10 +52,10 @@ source "hyperv-iso" "ubuntu-server-2204" {
       vagrant_password_hash  = var.vagrant_password_hash
       vagrant_ssh_public_key = local.vagrant_ssh_public_key
     })
-    "/meta-data" = <<EOF
-instance-id: iid-123456
-local-hostname: ${var.hostname}
-EOF
+    "/meta-data" = <<-EOF
+      instance-id: iid-123456
+      local-hostname: ${var.hostname}
+    EOF
   }
   communicator     = "ssh"
   ssh_username     = "vagrant"
