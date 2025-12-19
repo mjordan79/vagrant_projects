@@ -25,7 +25,7 @@ locals {
 source "hyperv-iso" "ubuntu-server-2204" {
   iso_url                          = var.hyperv_iso_url
   iso_checksum                     = "sha256:9bc6028870aef3f74f4e16b900008179e78b130e6b0b9a140635434a46aa98b0"
-  vm_name                          = "ubuntu-server-22.0.4"
+  vm_name                          = "ubuntu-server-22.04"
   generation                       = 2
   cpus                             = 8
   memory                           = 2048
@@ -35,6 +35,7 @@ source "hyperv-iso" "ubuntu-server-2204" {
   switch_name                      = "Default Switch"
   enable_virtualization_extensions = true
   boot_wait                        = "3s"
+  disk_block_size                  = 1
   boot_command = [
     "<wait2>", // Wait that GRUB menu appears
     "e",       // Enter GRUB edit mode
@@ -42,7 +43,7 @@ source "hyperv-iso" "ubuntu-server-2204" {
     "<down><down><wait><down><end><wait>",
     "<bs><bs><wait><bs><bs><wait>",
     // autoinstall configured with an http server for getting user-data and meta-data
-    "autoinstall noprompt 'ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/' ---",
+    "autoinstall 'ds=nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/' ---",
     "<wait2>",
     "<f10>" // Boot the system
   ]
@@ -66,7 +67,7 @@ source "hyperv-iso" "ubuntu-server-2204" {
 }
 
 build {
-  name = "ubuntu-hyperv-to-vagrant"
+  name = "ubuntu-hyperv-vagrant"
   sources = [
     "source.hyperv-iso.ubuntu-server-2204"
   ]
@@ -82,6 +83,4 @@ build {
     output               = var.box_name
     vagrantfile_template = "templates/Vagrantfile.hyperv.template"
   }
-
 }
-
