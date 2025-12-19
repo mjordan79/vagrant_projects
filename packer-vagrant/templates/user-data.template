@@ -10,13 +10,13 @@ autoinstall:
   source:
     id: ubuntu-server-minimal
 
-  # Identità dell'utente principale
+  # Identity of the main user.
   identity:
     hostname: ${hostname}
     username: vagrant
     password: "${vagrant_password_hash}"
 
-  # Configurazione SSH per l'accesso di Vagrant
+  # Configuring SSH for Vagrant access
   ssh:
     install-server: true
     allow-pw: true
@@ -28,7 +28,7 @@ autoinstall:
     layout:
       name: direct
 
-  # Sezione pacchetti (Spostata dentro autoinstall per evitare errori)
+  # Package installation.
   packages:
     - openssh-server
     - linux-virtual
@@ -36,23 +36,22 @@ autoinstall:
     - linux-tools-virtual
     - sudo
 
-  # Configurazione cloud-init integrata
   user-data:
     disable_root: false
 
-  # Comandi eseguiti a fine installazione (Spostati dentro autoinstall)
+  # Commands executed after the installation of the base system.
   late-commands:
-    # 1. Imposta la stessa password di vagrant per l'utente root
+    # 1. Set the same vagrant password for root
     - curtin in-target -- sh -c "echo 'root:${vagrant_password_hash}' | chpasswd -e"
-    # 2. Configura sudoers per l'utente vagrant (senza password)
+    # 2. Configure the vagrant user in the sudoers list, passwordless
     - curtin in-target -- sh -c "echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant && chmod 0440 /etc/sudoers.d/vagrant"
-    # Disabilita UseDNS per velocizzare il login SSH
+    # 3. Disable UseDNS for avoiding reverse DNS lookups that slow down vagrant ssh accesses
     - curtin in-target -- sh -c "echo 'UseDNS no' >> /etc/ssh/sshd_config"
-    # (Opzionale) Un altro tweak utile per Vagrant è GSSAPIAuthentication
+    # 4. Disable GSSAPIAuthentication
     - curtin in-target -- sh -c "echo 'GSSAPIAuthentication no' >> /etc/ssh/sshd_config"
-    # Disabilita l'inoltro X11 per evitare l'errore .Xauthority
+    # 5. Disable X11 Forwarding for avoding .Xauthority error at login
     - curtin in-target -- sed -i 's/X11Forwarding yes/X11Forwarding no/' /etc/ssh/sshd_config
-    # 3. Aggiornamenti finali e pulizia profonda dell'immagine
+    # 6. Final updates and cleanup
     - curtin in-target -- apt-get update
     - curtin in-target -- apt-get -y full-upgrade
     - curtin in-target -- apt-get -y autoremove --purge
@@ -60,10 +59,10 @@ autoinstall:
     - curtin in-target -- apt-get -y clean
     - curtin in-target -- rm -rf /var/lib/apt/lists/*
     - curtin in-target -- rm -rf /var/cache/apt/archives/*.deb
-    # 4. Reset ID macchina per evitare conflitti di rete nelle box clonate
+    # 7. Reset the machine ID to avoid network conflicts in cloned boxes
     - curtin in-target -- truncate -s 0 /etc/machine-id
     - curtin in-target -- rm -f /var/lib/dbus/machine-id
 
-  # Messaggio di benvenuto al login
+  # Welcome message at login
   runcmd:
     - [ sh, -c, "echo 'Vagrant base box ready' > /etc/motd" ]

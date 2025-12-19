@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "Azzeramento dello spazio libero (per migliorare la compressione)..."
-# Scrive un file di soli zero finché il disco è pieno, poi lo cancella
+echo "Zeroing free space for improving image compression ..."
+# Write a file made only by zeroes until the disk is full, then it deletes it.
 sudo dd if=/dev/zero of=/EMPTY bs=1M || true
 sudo rm -f /EMPTY
 
-# Forza il sync dei dischi
+# Force disks sync
 sync

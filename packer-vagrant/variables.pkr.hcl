@@ -8,6 +8,7 @@ variable "hostname" {
   default = "ubuntu"
 }
 
+// SHA-512 hash
 variable "vagrant_password_hash" {
   type    = string
   default = "$6$tEk1141N8WO7HAIF$HDYDDTtR/bOgAe6t0jdesH/BZB/IOLbEzYqfvKCsZxxsIALSsgGqrZXTSlXtqayJ.HX13rBRYxBzqWEV48Hpt0"
