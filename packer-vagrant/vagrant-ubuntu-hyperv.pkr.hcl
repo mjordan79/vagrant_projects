@@ -34,6 +34,7 @@ source "hyperv-iso" "ubuntu-server-2204" {
   secure_boot_template             = "MicrosoftUEFICertificateAuthority"
   switch_name                      = "Default Switch"
   enable_virtualization_extensions = true
+  skip_compaction                  = false
   boot_wait                        = "3s"
   disk_block_size                  = 1
   boot_command = [
