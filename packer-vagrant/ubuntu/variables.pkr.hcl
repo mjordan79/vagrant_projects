@@ -21,7 +21,7 @@ variable "hyperv_iso_url_2404" {
 
 variable "box_name_2404" {
   type    = string
-  default = "ubuntu-server-2404-lts.box"
+  default = "ubuntu-server-2404-lts"
 }
 
 /**

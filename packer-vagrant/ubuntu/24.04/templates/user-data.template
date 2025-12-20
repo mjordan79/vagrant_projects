@@ -4,17 +4,20 @@ autoinstall:
 
   keyboard:
     layout: it
+
   locale: it_IT.UTF-8
   updates: all
 
   source:
     id: ubuntu-server
 
+  # Identity of the main user.
   identity:
     hostname: ${hostname}
     username: vagrant
     password: "${vagrant_password_hash}"
 
+  # Configuring SSH for Vagrant access
   ssh:
     install-server: true
     allow-pw: true
@@ -26,35 +29,45 @@ autoinstall:
     layout:
       name: direct
 
+  # Package installation.
   packages:
     - openssh-server
-    - sudo
     - linux-virtual
     - linux-image-virtual
     - linux-cloud-tools-virtual
     - linux-tools-virtual
+    - sudo
 
   user-data:
     disable_root: false
 
+  # Commands executed after the installation of the base system.
   late-commands:
+    # Root password
     - curtin in-target -- sh -c "echo 'root:${vagrant_password_hash}' | chpasswd -e"
-    - curtin in-target -- sh -c "echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant && chmod 0440 /etc/sudoers.d/vagrant"
-    - curtin in-target -- sh -c "echo 'UseDNS no' >> /etc/ssh/sshd_config"
-    - curtin in-target -- sh -c "echo 'GSSAPIAuthentication no' >> /etc/ssh/sshd_config"
-    - curtin in-target -- sed -i 's/X11Forwarding yes/X11Forwarding no/' /etc/ssh/sshd_config"
 
+    # Vagrant sudoers
+    - curtin in-target -- sh -c "echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant && chmod 0440 /etc/sudoers.d/vagrant"
+
+    # SSH hardening via drop-in
+    - curtin in-target -- sh -c "mkdir -p /etc/ssh/sshd_config.d"
+    - curtin in-target -- sh -c "echo 'UseDNS no' > /etc/ssh/sshd_config.d/99-vagrant.conf"
+    - curtin in-target -- sh -c "echo 'GSSAPIAuthentication no' >> /etc/ssh/sshd_config.d/99-vagrant.conf"
+    - curtin in-target -- sh -c "echo 'X11Forwarding no' >> /etc/ssh/sshd_config.d/99-vagrant.conf"
+
+    # System update & cleanup
     - curtin in-target -- apt-get update
     - curtin in-target -- apt-get -y full-upgrade
     - curtin in-target -- apt-get -y autoremove --purge
     - curtin in-target -- apt-get -y autoclean
     - curtin in-target -- apt-get -y clean
-
+    - curtin in-target -- rm -rf /var/lib/apt/lists/*
     - curtin in-target -- rm -rf /var/cache/apt/archives/*.deb
     - curtin in-target -- find /var/log -type f -exec truncate -s 0 {} \;
     - curtin in-target -- rm -rf /tmp/*
     - curtin in-target -- rm -rf /root/.cache/*
     - curtin in-target -- find /boot -name "*.old" -delete
 
+    # Reset machine-id
     - curtin in-target -- truncate -s 0 /etc/machine-id
     - curtin in-target -- rm -f /var/lib/dbus/machine-id

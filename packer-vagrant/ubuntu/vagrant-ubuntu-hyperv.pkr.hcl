@@ -100,7 +100,7 @@ source "hyperv-iso" "ubuntu-server-2404" {
       vagrant_ssh_public_key = local.vagrant_ssh_public_key
     })
     "/meta-data" = <<-EOF
-      instance-id: iid-123456
+      instance-id: iid-123457
       local-hostname: ${var.hostname}
     EOF
   }
@@ -145,7 +145,7 @@ build {
     architecture         = "amd64"
     compression_level    = 9
     keep_input_artifact  = false
-    output               = var.box_name_2404
+    output               = "${var.box_name_2404}.box"
     vagrantfile_template = "24.04/templates/Vagrantfile.hyperv.template"
   }
 }
