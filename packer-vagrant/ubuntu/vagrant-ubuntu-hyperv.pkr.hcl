@@ -119,7 +119,11 @@ build {
   ]
 
   provisioner "shell" {
-    script = "../common/scripts/zeroing.sh"
+    scripts = [
+      "../common/scripts/hvkvp.sh",
+      "../common/scripts/network.sh",
+      "../common/scripts/zeroing.sh",
+    ]
   }
 
   post-processor "vagrant" {
