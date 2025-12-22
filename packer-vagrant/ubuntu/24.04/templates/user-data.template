@@ -1,4 +1,7 @@
 #cloud-config
+
+disable_root: false
+
 autoinstall:
   version: 1
 
@@ -7,6 +10,12 @@ autoinstall:
 
   locale: it_IT.UTF-8
   updates: all
+
+  user-data:
+    chpasswd:
+      expire: false
+      list:
+        - "root:${vagrant_password_hash}"
 
   source:
     id: ubuntu-server
@@ -21,7 +30,6 @@ autoinstall:
   ssh:
     install-server: true
     allow-pw: true
-    password-auth: true
     authorized-keys:
       - "${vagrant_ssh_public_key}"
 
@@ -33,11 +41,11 @@ autoinstall:
   # Package installation.
   packages:
     - openssh-server
+    - sudo
     - linux-virtual
     - linux-image-virtual
     - linux-cloud-tools-virtual
     - linux-tools-virtual
-    - sudo
 
   snaps:
     - name: core20
@@ -46,34 +54,31 @@ autoinstall:
   network:
     network:
       version: 2
+      renderer: networkd
       ethernets:
         main_interface:
+          optional: true
+          nameservers:
+            addresses:
+            - 4.2.2.1
+            - 4.2.2.2
+            - 208.67.220.220
           match:
             name: e* # Captures eth0, enp0s3, etc.
           dhcp4: true
-          dhcp6: false
-          link-local: [ ipv4 ]
-
-  user-data:
-    disable_root: false
+          link-local: [ ipv4, ipv6 ]
 
   # Commands executed after the installation of the base system.
   late-commands:
-    # Root password
-    - curtin in-target -- sh -c "echo 'root:${vagrant_password_hash}' | chpasswd -e"
-
-    # Vagrant sudoers
+    # 1. Configure the vagrant user in the sudoers list, passwordless
     - curtin in-target -- sh -c "echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant && chmod 0440 /etc/sudoers.d/vagrant"
-
-    # SSH hardening via drop-in
+    # 2. SSH hardening via drop-in
     - curtin in-target -- sh -c "mkdir -p /etc/ssh/sshd_config.d"
     - curtin in-target -- sh -c "echo 'UseDNS no' > /etc/ssh/sshd_config.d/99-vagrant.conf"
     - curtin in-target -- sh -c "echo 'GSSAPIAuthentication no' >> /etc/ssh/sshd_config.d/99-vagrant.conf"
     - curtin in-target -- sh -c "echo 'X11Forwarding no' >> /etc/ssh/sshd_config.d/99-vagrant.conf"
-
-    # System update & cleanup
-    - curtin in-target -- apt-get update
-    - curtin in-target -- apt-get -y full-upgrade
+    - curtin in-target -- sh -c "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config.d/99-vagrant.conf"
+    # 3. Final updates and cleanup
     - curtin in-target -- apt-get -y autoremove --purge
     - curtin in-target -- apt-get -y autoclean
     - curtin in-target -- apt-get -y clean
@@ -83,10 +88,9 @@ autoinstall:
     - curtin in-target -- rm -rf /tmp/*
     - curtin in-target -- rm -rf /root/.cache/*
     - curtin in-target -- find /boot -name "*.old" -delete
-
-    # Reset machine-id
+    # 4. Reset the machine ID to avoid network conflicts in cloned boxes
     - curtin in-target -- truncate -s 0 /etc/machine-id
     - curtin in-target -- rm -f /var/lib/dbus/machine-id
 
-  runcmd:
-    - systemctl disable systemd-networkd-wait-online.service --now
+runcmd:
+  - systemctl disable systemd-networkd-wait-online.service --now
