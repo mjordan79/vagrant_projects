@@ -70,19 +70,15 @@ autoinstall:
 
   # Commands executed after the installation of the base system.
   late-commands:
-    # 1. Set the same vagrant password for root
-    # - curtin in-target -- sh -c "echo 'root:${vagrant_password_hash}' | chpasswd -e"
-    # 2. Configure the vagrant user in the sudoers list, passwordless
+    # 1. Configure the vagrant user in the sudoers list, passwordless
     - curtin in-target -- sh -c "echo 'vagrant ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/vagrant && chmod 0440 /etc/sudoers.d/vagrant"
-    # 3. SSH hardening via drop-in
+    # 2. SSH hardening via drop-in
     - curtin in-target -- sh -c "mkdir -p /etc/ssh/sshd_config.d"
     - curtin in-target -- sh -c "echo 'UseDNS no' > /etc/ssh/sshd_config.d/99-vagrant.conf"
     - curtin in-target -- sh -c "echo 'GSSAPIAuthentication no' >> /etc/ssh/sshd_config.d/99-vagrant.conf"
     - curtin in-target -- sh -c "echo 'X11Forwarding no' >> /etc/ssh/sshd_config.d/99-vagrant.conf"
     - curtin in-target -- sh -c "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config.d/99-vagrant.conf"
-    # 4. Final updates and cleanup
-    - curtin in-target -- apt-get update
-    - curtin in-target -- apt-get -y full-upgrade
+    # 3. Final updates and cleanup
     - curtin in-target -- apt-get -y autoremove --purge
     - curtin in-target -- apt-get -y autoclean
     - curtin in-target -- apt-get -y clean
@@ -92,7 +88,7 @@ autoinstall:
     - curtin in-target -- rm -rf /tmp/*
     - curtin in-target -- rm -rf /root/.cache/*
     - curtin in-target -- find /boot -name "*.old" -delete
-    # 5. Reset the machine ID to avoid network conflicts in cloned boxes
+    # 4. Reset the machine ID to avoid network conflicts in cloned boxes
     - curtin in-target -- truncate -s 0 /etc/machine-id
     - curtin in-target -- rm -f /var/lib/dbus/machine-id
 

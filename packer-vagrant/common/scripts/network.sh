@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
 
-# Disable IPv6 for the current boot.
-sudo sysctl net.ipv6.conf.all.disable_ipv6=1
-
-# Ensure IPv6 stays disabled.
-printf "\nnet.ipv6.conf.all.disable_ipv6 = 1\n" | sudo tee -a /etc/sysctl.conf > /dev/null
-
-printf "ubuntu.localdomain\n" | sudo tee /etc/hostname > /dev/null
-printf "\n127.0.0.1 ubuntu.localdomain\n\n" | sudo tee -a /etc/hosts > /dev/null
-
+# Create a new netplan entry
 sudo tee /etc/netplan/01-netcfg.yaml > /dev/null <<'EOF'
 network:
   version: 2
@@ -22,25 +14,29 @@ network:
         addresses: [4.2.2.1, 4.2.2.2, 208.67.220.220]
 EOF
 
+sudo chmod 600 /etc/netplan/01-netcfg.yaml
+
+# Hyper-V doesn't update the ARP table until it knows the assigned IP address. This doesn't happen until
+# the VM doesn's send some network traffic. hyperv-kick.service force a DHCP renew, generates immediate traffic
+# and the ARP table is immediately updated.
+sudo tee /etc/systemd/system/hyperv-kick.service > /dev/null <<'EOF'
+[Unit]
+Description=Force DHCP renew so Hyper-V sees the IP
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/networkctl renew eth0
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable hyperv-kick.service
+
 # Apply the network plan configuration.
 sudo netplan generate
 
-# Ensure a nameserver is being used that won't return an IP for non-existent domain names.
-sudo sed -i -e "s/#DNS=.*/DNS=4.2.2.1 4.2.2.2 208.67.220.220/g" /etc/systemd/resolved.conf
-sudo sed -i -e "s/#FallbackDNS=.*/FallbackDNS=/g" /etc/systemd/resolved.conf
-sudo sed -i -e "s/#Domains=.*/Domains=/g" /etc/systemd/resolved.conf
-sudo sed -i -e "s/#DNSSEC=.*/DNSSEC=yes/g" /etc/systemd/resolved.conf
-sudo sed -i -e "s/#Cache=.*/Cache=yes/g" /etc/systemd/resolved.conf
-sudo sed -i -e "s/#DNSStubListener=.*/DNSStubListener=yes/g" /etc/systemd/resolved.conf
-
-# Install ifplugd so we can monitor and auto-configure nics.
-sudo apt-get --assume-yes install ifplugd
-
-# Configure ifplugd to monitor the eth0 interface.
-sudo sed -i -e 's/INTERFACES=.*/INTERFACES="eth0"/g' /etc/default/ifplugd
-
 # Ensure the networking interfaces get configured on boot.
 sudo systemctl enable systemd-networkd.service
-
-# Ensure ifplugd also gets started, so the ethernet interface is monitored.
-sudo systemctl enable ifplugd.service
