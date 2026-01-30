@@ -6,6 +6,7 @@ packer_cache/
 output-*
 local/
 venv/
+.venv/
 *.iso
 *.log
 *.box
