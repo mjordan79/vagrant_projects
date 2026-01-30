@@ -1,6 +1,7 @@
 ### Vagrant ###
 .vagrant/
 .idea/
+.vscode/
 packer_cache/
 output-*
 local/
