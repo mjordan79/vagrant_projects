@@ -22,6 +22,9 @@ locals {
   box_version            = "1.0.${local.date_version}"
 }
 
+/**
+ * Ubuntu 22.04 LTS stuff
+ */
 source "hyperv-iso" "ubuntu-server-2204" {
   iso_url                          = var.hyperv_iso_url_2204
   iso_checksum                     = "sha256:9bc6028870aef3f74f4e16b900008179e78b130e6b0b9a140635434a46aa98b0"
@@ -67,6 +70,9 @@ source "hyperv-iso" "ubuntu-server-2204" {
   shutdown_timeout = var.shutdown_timeout
 }
 
+/**
+ * Ubuntu 24.04 LTS stuff
+ */
 source "hyperv-iso" "ubuntu-server-2404" {
   iso_url                          = var.hyperv_iso_url_2404
   iso_checksum                     = "sha256:c3514bf0056180d09376462a7a1b4f213c1d6e8ea67fae5c25099c6fd3d8274b"

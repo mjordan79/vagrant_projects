@@ -3,8 +3,7 @@
 # Disable the daemon to remove the symlihk.
 sudo systemctl disable hv-kvp-daemon.service
 
-# Override the default unit file with a version that won't hang during boot ups.
-
+# Override the default unit file with a version that won't hang during boot-ups.
 sudo tee /etc/systemd/system/multi-user.target.wants/hv-kvp-daemon.service > /dev/null <<'EOF'
 [Unit]
 Description=Hyper-V KVP Protocol Daemon
