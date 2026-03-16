@@ -17,7 +17,7 @@ Vagrant.require_version ">= 2.4.9"
 Vagrant.configure(2) do |config| 
 	
 	# Config parameters for the environments
-	number_of_nodes = 6
+	number_of_nodes = 7
 	cpus_per_node = 16
 	mem_per_node = 4192
 	machine_name_prefix = "node"
@@ -25,7 +25,7 @@ Vagrant.configure(2) do |config|
 	regular_user = "user"
 	regular_password = "user"
 	root_password = "vagrant"
-	update_distro = "full" # release = do-release-upgrade, full = apt full upgrade, upgrade = apt upgrade, disabled = apt update
+	update_distro = "disabled" # release = do-release-upgrade, full = apt full upgrade, upgrade = apt upgrade, disabled = apt update
 	enable_zsh = false
 	enable_docker = false
 	# enable_kubernetes = true subdivides the total number of nodes in 1 load balancer node and 3 control plane nodes. The remaining nodes
@@ -36,13 +36,13 @@ Vagrant.configure(2) do |config|
 	# while it will be installed Kubernetes through MicroK8s / snapd on the other nodes. 
 	# If enable_kubernetes = false, the nodes will be created all equal following the specs given with the cpus_per_node and mem_per_node parameters.
 	enable_kubernetes = true
-	kubernetes_version = '1.32'
+	kubernetes_version = '1.34'
 	# An additional rancher node is created as the second VM. In this node it is not necessary to provision metallb.
 	# This node will be added to the dnsmasq DNS server with the name rancher2
-	enable_rancher2_node = false
+	enable_rancher2_node = true
 	extra_hosts = ["argocd", "nginx-ingress", "nginx-gateway"]
 	# Working with snap in scripts is a pain. So we don't bother restarting things. If you have problems, enable a final reboot.
-	enable_final_reboot = true
+	enable_final_reboot = false
 	enable_nfs = true
 	enable_java = false
 	java_versions = ["21", "25"]
@@ -111,7 +111,8 @@ Vagrant.configure(2) do |config|
 	(1..number_of_nodes).each do |i|
         config.vm.define "#{machine_name_prefix}-#{i}", primary: (i == 1) do |node|
             node.vm.network "public_network", bridge: "LabSwitch"
-	    	node.vm.box = "generic/ubuntu2204"
+	    	#node.vm.box = "generic/ubuntu2204"
+	    	node.vm.box = "digitalnucleus/ubuntu-server-22.04"
             node.vm.hostname = "#{hostnames[i - 1]}.#{machine_internal_domain}"
 	    	node.vm.provider "hyperv" do |hyperv|
 	    		hyperv.enable_virtualization_extensions = true
